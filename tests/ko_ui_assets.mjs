@@ -4,6 +4,7 @@ import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
 const REQUIRED_KOREAN_UI_SAMPLES = ["파일", "편집", "카드", "속성", "저장", "열기"];
+const EXPECTED_KO_UI_PIXEL_SIZE = 16;
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -114,6 +115,9 @@ const validateWebFont = (fontPath, errors) => {
   if (!positiveNumber(font.lineHeight)) errors.push("KO_UI_FONT.lineHeight must be positive");
   if (!positiveNumber(font.ascent)) errors.push("KO_UI_FONT.ascent must be positive");
   if (!nonNegativeNumber(font.descent)) errors.push("KO_UI_FONT.descent must be non-negative");
+  if (font.pixelSize !== EXPECTED_KO_UI_PIXEL_SIZE) {
+    errors.push(`KO_UI_FONT.pixelSize must be ${EXPECTED_KO_UI_PIXEL_SIZE}`);
+  }
 
   const requiredChars = [...new Set([...REQUIRED_KOREAN_UI_SAMPLES.join("")])];
   for (const char of requiredChars) {
@@ -145,6 +149,9 @@ const validateWebFont = (fontPath, errors) => {
 const validateNativeFontHeader = (fontHeaderPath, errors) => {
   const header = fs.readFileSync(fontHeaderPath, "utf8");
   if (!header.includes("KO_UI_FONT")) errors.push(`${relative(fontHeaderPath)} must define KO_UI_FONT data`);
+  if (!header.includes(`#define KO_UI_FONT_PIXEL_SIZE ${EXPECTED_KO_UI_PIXEL_SIZE}`)) {
+    errors.push(`${relative(fontHeaderPath)} must define KO_UI_FONT_PIXEL_SIZE ${EXPECTED_KO_UI_PIXEL_SIZE}`);
+  }
 
   const requiredChars = [...new Set([...REQUIRED_KOREAN_UI_SAMPLES.join("")])];
   for (const char of requiredChars) {

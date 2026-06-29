@@ -605,7 +605,8 @@ sample_to_byte=s=>0xFF&clamp(-127,s*128,127)
 // Menus
 
 const menu={heads:[],items:[],x:0,active:-1,stick:-1,lw:-1,sz:rect()}
-menu_label=_=>rect(menu.x,1,context.size.x-menu.x-2,1+font_h(FONT_MENU))
+menu_h=_=>max(3+font_h(FONT_MENU),ui_lineheight()+4)
+menu_label=_=>rect(menu.x,1,context.size.x-menu.x-2,menu_h()-2)
 no_menu=_=>menu.active==-1&&menu.stick==-1
 in_layer=_=>no_menu()&&(ms.type?ms.in_modal:1)&&((!running()&&!msg.overshoot)||ms.type!=null)
 in_widgets=_=>ms.type!=null?ms.in_modal:1
@@ -617,7 +618,7 @@ menus_clear=_=>(menu.active=-1,menu.stick=-1)
 menu_setup=_=>(menu.x=10,menu.heads=[],menu.sz=rect(),menu.active=-1)
 menu_bar=(name,enabled)=>{
 	if(menus_off())enabled=0
-	const t=rpair(rect(menu.x,2),ui_textsize(name)), b=rect(t.x-5,0,t.w+10,t.h+3), i=menu.heads.length
+	const h=menu_h(), s=ui_textsize(name), t=rpair(rect(menu.x,ceil((h-s.y)/2)),s), b=rect(t.x-5,0,t.w+10,h), i=menu.heads.length
 	menu.heads.push(menu_head(name,enabled,t,b)), menu.x=b.x+b.w+5; if(menus_hidden())return
 	if(ev.click&&enabled&&over(b)){ev.mu=0;if(menu.stick==-1)menu.stick=i}
 	if(menu.stick!=-1&&enabled&&over(b))menu.stick=i,menu.lw=0
@@ -643,7 +644,7 @@ menu_item=(name,enabled,shortcut,func)=>menu_check(name,enabled,-1,shortcut,func
 menu_separator=_=>menu_check(0,0,0,0,0)
 menu_finish=_=>{
 	if(menus_off()||menus_hidden())return
-	const b=rect(0,0,context.size.x,3+font_h(FONT_MENU)); draw_rect(b,32),draw_hline(0,b.w,b.h,1); const pal=deck.patterns.pal.pix
+	const b=rect(0,0,context.size.x,menu_h()); draw_rect(b,32),draw_hline(0,b.w,b.h,1); const pal=deck.patterns.pal.pix
 	menu.heads.map((x,i)=>{
 		let a=x.enabled&&(over(x.b)||i==menu.stick||i==menu.active);if(ev.drag&&!dover(b))a=0
 		draw_ui_text(x.t,x.name,x.enabled?1:13);if(a)draw_invert(pal,x.b)
@@ -2500,7 +2501,7 @@ soft_keyboard=r=>{
 keycaps=_=>{
 	if(!wid.fv)kc.on=0;if(!kc.on)return
 	frame.image.pix.fill(32)
-	const mh=3+font_h(FONT_MENU)
+	const mh=menu_h()
 	const r=rect(0,mh,frame.size.x+1,0|((frame.size.y/2)-mh))
 	if(kc.heading){const s=font_textsize(FONT_MENU,kc.heading);const h=rect(r.x,r.y,r.w,s.y+5);draw_textc(h,kc.heading,FONT_MENU,1),r.h-=h.h,r.y+=h.h}
 	if(ms.type)ms.in_modal=1
@@ -3230,7 +3231,7 @@ script_editor=r=>{
 		const e=cursor>=x.layout.length?1:0, i=cursor-e, l=x.layout[i].line, c=i-x.lines[l].range.x
 		return rect(l+1,c+1+e)
 	}
-	const mh=3+font_h(FONT_MENU)
+	const mh=menu_h()
 	let overw=null;if(sc.xray){
 		const wids=con_wids();let ow=0;for(let z=wids.v.length-1;z>=0;z--){
 			const wid=wids.v[z],size=con_to_screen(unpack_widget(wid).size), o=ev.alt&&over(size)&&!ow, col=o?(overw=wid,13):44; ow|=o
@@ -3759,7 +3760,7 @@ tick=_=>{
 	msg.pending_drag=0,msg.pending_halt=0,frame=context,uicursor=0,fb.pix.fill(0)
 	menu_setup(),all_menus(),widget_setup()
 	const ev_stash=ev;kc.heading=null;if(kc.on)ev=event_state()
-	if(uimode=='script'){const mh=3+font_h(FONT_MENU);if(!kc.on)script_editor(rect(0,mh,frame.size.x+1,frame.size.y-mh))}else{main_view()}
+	if(uimode=='script'){const mh=menu_h();if(!kc.on)script_editor(rect(0,mh,frame.size.x+1,frame.size.y-mh))}else{main_view()}
 	modals(),gestures()
 	if(kc.on){ev=ev_stash,keycaps()}
 	if(uimode=='script'&&enable_touch&&ms.type==null)wid.active=0

@@ -299,7 +299,8 @@ typedef struct {
 	menu_entry items[32]; int item_count;
 	int x, active, stick, lw; rect sz;
 } menu_state; menu_state menu={{{0}},0,{{0}},0, -1,-1,-1,0, {0,0,0,0}};
-rect menu_label(void){return (rect){menu.x,1,context.size.x-menu.x-2,1+font_h(FONT_MENU)};}
+int menu_h(void){return MAX(3+font_h(FONT_MENU),ui_lineheight()+4);}
+rect menu_label(void){return (rect){menu.x,1,context.size.x-menu.x-2,menu_h()-2};}
 
 enum modal_type{
 	modal_none,modal_about,modal_query,modal_listen,modal_link,modal_gridcell,modal_open,modal_save,
@@ -421,7 +422,7 @@ void menu_setup(void){
 }
 void menu_bar(char*name,int enabled){
 	if(menus_off())enabled=0;
-	rect t=rect_pair((pair){menu.x,2},ui_textsize(name)), b={t.x-5,0,t.w+10,t.h+3}; int i=menu.head_count;
+	int h=menu_h();pair s=ui_textsize(name);rect t=rect_pair((pair){menu.x,(h-s.y+1)/2},s), b={t.x-5,0,t.w+10,h}; int i=menu.head_count;
 	menu.heads[menu.head_count++]=(menu_head){name,enabled,t,b}; menu.x=b.x+b.w+5; if(menus_hidden())return;
 	if(ev.click&&enabled&&over(b)){ev.mu=0;if(menu.stick==-1)menu.stick=i;}
 	if(menu.stick!=-1&&enabled&&over(b))menu.stick=i,menu.lw=0;
@@ -446,7 +447,7 @@ int menu_item(char*name,int enabled,char shortcut){return menu_check(name,enable
 void menu_separator(void){menu_check(NULL,0,0,'\0');}
 void menu_finish(void){
 	if(menus_off()||menus_hidden())return;
-	rect b={0,0,context.size.x,3+font_h(FONT_MENU)};
+	rect b={0,0,context.size.x,menu_h()};
 	draw_rect(b,32),draw_hline(0,b.w,b.h,1); char*pal=patterns_pal(ifield(deck,"patterns"));
 	for(int i=0;i<menu.head_count;i++){
 		menu_head x=menu.heads[i];int a=x.enabled&&(over(x.b)||i==menu.stick||i==menu.active);
@@ -2497,7 +2498,7 @@ void validate_modules(void){
 	}
 }
 void script_editor(rect r){
-	int mh=3+font_h(FONT_MENU);
+	int mh=menu_h();
 	lv*overw=NULL;if(sc.xray){
 		lv*wids=con_wids();int ow=0;EACHR(z,wids){
 			lv*wid=wids->lv[z];rect size=con_to_screenr(unpack_widget(wid).size);
@@ -2645,7 +2646,7 @@ void soft_keyboard(rect r,int*exit,int*eval){
 void keycaps(void){
 	if(!wid.fv)kc.on=0;if(!kc.on)return;
 	memset(frame.buffer->sv,0,frame.buffer->c);
-	int mh=3+font_h(FONT_MENU);
+	int mh=menu_h();
 	rect r={0,mh,frame.size.x+1,(frame.size.y/2)-mh};
 	if(kc.heading){pair s=font_textsize(FONT_MENU,kc.heading);rect h={r.x,r.y,r.w,s.y+5};draw_textc(h,kc.heading,FONT_MENU,1);r.h-=h.h,r.y+=h.h;}
 	if(ms.type)ms.in_modal=1;
@@ -4320,7 +4321,7 @@ void tick(lv*env){
 	menu_setup(),all_menus(),widget_setup();
 	memset(frame.buffer->sv,0,frame.buffer->c);
 	event_state ev_stash=ev;kc.heading=NULL;if(kc.on){ev=(event_state){0};}
-	if(uimode==mode_script){int mh=3+font_h(FONT_MENU);if(!kc.on)script_editor((rect){0,mh,frame.size.x+1,frame.size.y-mh});}else{main_view();}
+	if(uimode==mode_script){int mh=menu_h();if(!kc.on)script_editor((rect){0,mh,frame.size.x+1,frame.size.y-mh});}else{main_view();}
 	modals(),gestures();
 	if(uimode==mode_interact&&ev.drag&&ob.sel->c&&lb(ifield(ob.sel->lv[0],"draggable"))){
 		lv*c=ivalue(ob.sel->lv[0],"card");pair off=(contraption_is(c)||prototype_is(c))?getpair(ifield(c,"pos")):(pair){0,0};
