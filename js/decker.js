@@ -148,6 +148,71 @@ draw_modal_rtext=extra=>{
 	if(lit(ms.message)){draw_text_rich(tbox,l,1,1)}else{draw_text_wrap(tbox,l,1)}
 	return b
 }
+ui_font=()=>globalThis.KO_UI_FONT&&globalThis.KO_UI_FONT.glyphs?globalThis.KO_UI_FONT:null
+ui_text=(id,fallback=id)=>{
+	const strings=globalThis.KO_UI_STRINGS||{}
+	return Object.hasOwn(strings,id)?strings[id]:fallback
+}
+ui_text_format=(id,values=[],fallback=id)=>{
+	const args=Array.isArray(values)?values:[values];let next=0
+	return ui_text(id,fallback).replace(/%(\d+\$)?[sd]/g,(match,pos)=>{
+		const index=pos?parseInt(pos,10)-1:next++
+		return index>=0&&index<args.length?`${args[index]}`:match
+	})
+}
+ui_glyph=char=>{
+	const font=ui_font();if(!font)return null
+	const code=char.codePointAt(0), hex=code.toString(16).toUpperCase()
+	return font.glyphs[`${code}`]||font.glyphs[char]||font.glyphs[`0x${hex}`]||font.glyphs[`U+${hex}`]||null
+}
+ui_lineheight=()=>ui_font()?.lineHeight||font_h(FONT_MENU)
+ui_char_width=char=>{
+	const glyph=ui_glyph(char)
+	return glyph?glyph.advance:font_gw(FONT_MENU,char)+font_sw(FONT_MENU)
+}
+ui_textsize=text=>{
+	let width=0,line=0,lines=1
+	for(const char of `${text}`){
+		if(char=='\n'){width=max(width,line),line=0,lines++}
+		else{line+=ui_char_width(char)}
+	}
+	return {x:max(width,line),y:lines*ui_lineheight()}
+}
+draw_ui_glyph=(x,y,glyph,pattern)=>{
+	const rows=glyph.pixels||[]
+	for(let row=0;row<rows.length;row++)for(let col=0;col<rows[row].length;col++){
+		if(rows[row][col]!='0')draw_pix(x+glyph.xOffset+col,y+glyph.yOffset+row,pattern)
+	}
+}
+draw_ui_text=(r,text,pattern=1)=>{
+	let x=r.x,y=r.y
+	for(const char of `${text}`){
+		if(char=='\n'){x=r.x,y+=ui_lineheight();continue}
+		const glyph=ui_glyph(char)
+		if(glyph){draw_ui_glyph(x,y,glyph,pattern),x+=glyph.advance}
+		else{draw_text(rect(x,y),char,FONT_MENU,pattern),x+=ui_char_width(char)}
+	}
+}
+draw_ui_text_fit=(r,text,pattern=1)=>{
+	let out="", width=0;const ellipsis="..."
+	const ellipsisWidth=ui_textsize(ellipsis).x
+	for(const char of `${text}`){
+		if(char=='\n')break
+		const next=ui_char_width(char)
+		if(width+next>=r.w-ellipsisWidth){out+=ellipsis;break}
+		out+=char,width+=next
+	}
+	const size=ui_textsize(out)
+	draw_ui_text(rect(r.x,r.y+ceil((r.h-size.y)/2),r.w,size.y),out,pattern)
+}
+draw_ui_textc=(r,text,pattern=1)=>{
+	const size=ui_textsize(text)
+	if(size.x<r.w){draw_ui_text(rcenter(r,size),text,pattern)}else{draw_ui_text_fit(r,text,pattern)}
+}
+draw_ui_textr=(r,text,pattern=1)=>{
+	const size=ui_textsize(text)
+	if(size.x<r.w){draw_ui_text(rect(r.x+r.w-size.x,r.y+ceil((r.h-size.y)/2),size.x,size.y),text,pattern)}else{draw_ui_text_fit(r,text,pattern)}
+}
 draw_text_outlined=(pos,text,f)=>{
 	([[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]).map(([x,y])=>draw_text(rect(pos.x+x,pos.y+y),text,f,32))
 	draw_text(pos,text,f,1)
@@ -552,7 +617,7 @@ menus_clear=_=>(menu.active=-1,menu.stick=-1)
 menu_setup=_=>(menu.x=10,menu.heads=[],menu.sz=rect(),menu.active=-1)
 menu_bar=(name,enabled)=>{
 	if(menus_off())enabled=0
-	const t=rpair(rect(menu.x,2),font_textsize(FONT_MENU,name)), b=rect(t.x-5,0,t.w+10,t.h+3), i=menu.heads.length
+	const t=rpair(rect(menu.x,2),ui_textsize(name)), b=rect(t.x-5,0,t.w+10,t.h+3), i=menu.heads.length
 	menu.heads.push(menu_head(name,enabled,t,b)), menu.x=b.x+b.w+5; if(menus_hidden())return
 	if(ev.click&&enabled&&over(b)){ev.mu=0;if(menu.stick==-1)menu.stick=i}
 	if(menu.stick!=-1&&enabled&&over(b))menu.stick=i,menu.lw=0
@@ -562,12 +627,12 @@ menu_bar=(name,enabled)=>{
 	}if(i==menu.active||i==menu.stick)menu.sz=rect(b.x,b.h,max(b.w,menu.lw),0),menu.items=[]
 	if(ev.md&&over(b)&&enabled)ev.md=0
 }
-shortcut_w=c=>!c?0: 10+font_textsize(FONT_MENU,'^'+c).x
+shortcut_w=c=>!c?0: 10+ui_textsize('^'+c).x
 menu_check=(name,enabled,check,shortcut,func)=>{
 	if(!last(menu.heads).enabled)return 0
 	const sc=enabled&&shortcut&&ev.shortcuts[shortcut]; if(sc)delete ev.shortcuts[shortcut];
 	if(menu.heads.length-1!=menu.active&&menu.heads.length-1!=menu.stick)return sc
-	const t=name?rpair(rect(menu.sz.x+5+8,menu.sz.y+menu.sz.h+2),font_textsize(FONT_MENU,name)): rect(menu.sz.x,menu.sz.y+menu.sz.h+2,1,1)
+	const t=name?rpair(rect(menu.sz.x+5+8,menu.sz.y+menu.sz.h+2),ui_textsize(name)): rect(menu.sz.x,menu.sz.y+menu.sz.h+2,1,1)
 	if(shortcut)t.w+=shortcut_w(shortcut)
 	const b=rect(menu.sz.x,menu.sz.y+menu.sz.h,max(menu.sz.w,t.w+10+8),t.h+4)
 	menu.items.push(menu_entry(name,enabled,check,shortcut,t,b)), menu.sz=runion(menu.sz,b)
@@ -581,15 +646,15 @@ menu_finish=_=>{
 	const b=rect(0,0,context.size.x,3+font_h(FONT_MENU)); draw_rect(b,32),draw_hline(0,b.w,b.h,1); const pal=deck.patterns.pal.pix
 	menu.heads.map((x,i)=>{
 		let a=x.enabled&&(over(x.b)||i==menu.stick||i==menu.active);if(ev.drag&&!dover(b))a=0
-		draw_text(x.t,x.name,FONT_MENU,x.enabled?1:13);if(a)draw_invert(pal,x.b)
+		draw_ui_text(x.t,x.name,x.enabled?1:13);if(a)draw_invert(pal,x.b)
 	})
 	if(!menu.sz.w)return
 	draw_shadow(menu.sz,1,32,1);menu.lw=0;let sw=0;menu.items.map(x=>{menu.lw=max(menu.lw,x.b.w),sw=max(sw,shortcut_w(x.shortcut))})
 	menu.items.map(x=>{
 		const o=over(x.b)&&x.name&&x.enabled
-		if(x.name){draw_text(x.t,x.name,FONT_MENU,x.enabled?1:13)}else{draw_rect(rect(x.t.x+2,x.t.y,menu.sz.w-5,1),19)}
+		if(x.name){draw_ui_text(x.t,x.name,x.enabled?1:13)}else{draw_rect(rect(x.t.x+2,x.t.y,menu.sz.w-5,1),19)}
 		if(x.check==1)draw_icon(rect(menu.sz.x+2,x.t.y+3),CHECK,x.enabled?1:13)
-		if(x.shortcut)draw_text(rect(menu.sz.x+menu.sz.w-3-sw+10,x.t.y),'^'+x.shortcut,FONT_MENU,x.enabled?1:13)
+		if(x.shortcut)draw_ui_text(rect(menu.sz.x+menu.sz.w-3-sw+10,x.t.y),'^'+x.shortcut,x.enabled?1:13)
 		if(o)draw_invert(pal,inset(x.b,1))
 	});if(ev.mu)menu.stick=-1
 }
@@ -3251,126 +3316,126 @@ interpret=_=>{
 text_edit_menu=_=>{
 	const selection=wid.fv!=null&&wid.cursor.x!=wid.cursor.y
 	const rich=wid.fv!=null&&wid.f.style=='rich'
-	if(menu_item('Undo',wid.hist_cursor>0              ,'z'))field_undo()
-	if(menu_item('Redo',wid.hist_cursor<wid.hist.length,'Z'))field_redo()
-	menu_separator()
-	if(menu_item('Cut',selection,'x',menucut)){}
-	if(menu_item('Copy',selection,'c',menucopy)){}
-	if(rich&&menu_item('Copy Rich Text',selection,0,menucopyrich)){}
-	if(menu_item('Paste',wid.fv!=null,'v',menupaste)){}
-	if(menu_item('Clear',wid.fv!=null))wid.cursor=rect(0,RTEXT_END),field_keys('Delete',0)
-	if(!enable_touch&&!kc.on){menu_separator();if(menu_item('Keycaps...',wid.fv!=null))keycaps_force_enter()}
-	menu_separator()
-	if(menu_item('Select All',wid.fv!=null,'a'))wid.cursor=rect(0,RTEXT_END)
-}
+		if(menu_item(ui_text('command.undo','Undo'),wid.hist_cursor>0              ,'z'))field_undo()
+		if(menu_item(ui_text('command.redo','Redo'),wid.hist_cursor<wid.hist.length,'Z'))field_redo()
+		menu_separator()
+		if(menu_item(ui_text('command.cut','Cut'),selection,'x',menucut)){}
+		if(menu_item(ui_text('command.copy','Copy'),selection,'c',menucopy)){}
+		if(rich&&menu_item(ui_text('command.copy_rich_text','Copy Rich Text'),selection,0,menucopyrich)){}
+		if(menu_item(ui_text('command.paste','Paste'),wid.fv!=null,'v',menupaste)){}
+		if(menu_item(ui_text('command.clear','Clear'),wid.fv!=null))wid.cursor=rect(0,RTEXT_END),field_keys('Delete',0)
+		if(!enable_touch&&!kc.on){menu_separator();if(menu_item(ui_text('command.keycaps','Keycaps...'),wid.fv!=null))keycaps_force_enter()}
+		menu_separator()
+		if(menu_item(ui_text('command.select_all','Select All'),wid.fv!=null,'a'))wid.cursor=rect(0,RTEXT_END)
+	}
 all_menus=_=>{
 	const blocked=running()||msg.overshoot
 	const canlisten=!blocked&&(ms.type=='listen'||ms.type==null)
-	menu_bar('Decker',canlisten&&!kc.on)
-	if(menu_item('About...',1))modal_enter('about')
-	if(menu_check('Listener',canlisten,ms.type=='listen','l')){if(ms.type!='listen'){modal_enter('listen')}else{modal_exit(0)}}
-	menu_separator()
-	menu_check('Fullscreen',1,is_fullscreen(),null,toggle_fullscreen)
-	if(menu_check('Touch Input',1,enable_touch)){enable_touch^=1,set_touch=1;if(!enable_touch)kc.on=0}
-	if(menu_check('Script Profiler',1,profiler))profiler^=1
-	if(menu_check('Toolbars',tzoom>0,toolbars_enable))toolbars_enable^=1,resize()
-	if(blocked){
-		menu_bar('Script',1)
-		if(menu_item('Stop',1)){msg.pending_halt=1;if(ms.type!='query'&&ms.type!='listen'){if(ms.type!=null){modal_exit(0)}setmode('object')}}
-		menu_bar('Edit',(ms.type=='input'||ms.type=='save')&&wid.fv)
-		text_edit_menu()
-		return
-	}
-	menu_bar('File',(ms.type==null||ms.type=='sounds'||ms.type=='recording')&&(!kc.on||uimode=='script'))
-	if(uimode=='script'){
-		if(menu_item('Close Script',1))close_script()
+		menu_bar(ui_text('menu.decker','Decker'),canlisten&&!kc.on)
+		if(menu_item(ui_text('command.about','About...'),1))modal_enter('about')
+		if(menu_check(ui_text('menu.listener','Listener'),canlisten,ms.type=='listen','l')){if(ms.type!='listen'){modal_enter('listen')}else{modal_exit(0)}}
 		menu_separator()
-		if(menu_item('Go to Deck',!deck_is(sc.target)           ))close_script(deck)
-		const container=con()
-		if(menu_item(`Go to ${prototype_is(container)?'Prototype':'Card'}`,sc.target!=container))close_script(container)
-		if(menu_check('X-Ray Specs',!kc.on,sc.xray))sc.xray^=1
-	}
-	else if(ms.type=='sounds'){
-		menu_item('Import Sound...',1,0,_=>open_file('audio/*',load_sound))
-	}
-	else if(ms.type=='recording'){
-		if(menu_item('Close Sound',1))modal_exit(0)
-	}
-	else{
-		if(menu_item('New Deck...',1)){
+		menu_check(ui_text('command.fullscreen','Fullscreen'),1,is_fullscreen(),null,toggle_fullscreen)
+		if(menu_check(ui_text('command.touch_input','Touch Input'),1,enable_touch)){enable_touch^=1,set_touch=1;if(!enable_touch)kc.on=0}
+		if(menu_check(ui_text('command.script_profiler','Script Profiler'),1,profiler))profiler^=1
+		if(menu_check(ui_text('command.toolbars','Toolbars'),tzoom>0,toolbars_enable))toolbars_enable^=1,resize()
+		if(blocked){
+			menu_bar(ui_text('menu.script','Script'),1)
+			if(menu_item(ui_text('command.stop','Stop'),1)){msg.pending_halt=1;if(ms.type!='query'&&ms.type!='listen'){if(ms.type!=null){modal_exit(0)}setmode('object')}}
+			menu_bar(ui_text('menu.edit','Edit'),(ms.type=='input'||ms.type=='save')&&wid.fv)
+			text_edit_menu()
+			return
+		}
+		menu_bar(ui_text('menu.file','File'),(ms.type==null||ms.type=='sounds'||ms.type=='recording')&&(!kc.on||uimode=='script'))
+		if(uimode=='script'){
+			if(menu_item(ui_text('command.close_script','Close Script'),1))close_script()
+			menu_separator()
+			if(menu_item(ui_text('command.go_to_deck','Go to Deck'),!deck_is(sc.target)           ))close_script(deck)
+			const container=con()
+			if(menu_item(prototype_is(container)?ui_text('command.go_to_prototype','Go to Prototype'):ui_text('command.go_to_card','Go to Card'),sc.target!=container))close_script(container)
+			if(menu_check(ui_text('command.xray_specs','X-Ray Specs'),!kc.on,sc.xray))sc.xray^=1
+		}
+		else if(ms.type=='sounds'){
+			menu_item(ui_text('command.import_sound','Import Sound...'),1,0,_=>open_file('audio/*',load_sound))
+		}
+		else if(ms.type=='recording'){
+			if(menu_item(ui_text('dialog.common.close','Close'),1))modal_exit(0)
+		}
+		else{
+			if(menu_item(ui_text('command.new_deck','New Deck...'),1)){
 			if(dirty){
 				modal_enter('confirm_new')
 				ms.message=lms('The current deck has unsaved changes.\nAre you sure you want to discard it?')
 				ms.verb=lms('Discard')
 			}else{load_deck(deck_read(''))}
 		}
-		if(menu_item('New Card',1)){const c=deck_add(deck,lms('card')), n=ln(ifield(ifield(deck,'card'),'index'));iwrite(c,lms('index'),lmn(n+1)),n_go([c],deck)}
-		menu_separator()
-		menu_item('Open...',1,0,_=>open_text('.html,.deck',text=>{load_deck(deck_read(text))}))
-		if(menu_item('Save As...',1))modal_enter('save_deck')
-		menu_separator()
-		menu_item("Import Image...",1,0,_=>{open_file('image/*',load_image)})
-		if(menu_item("Export Image...",1))modal_enter('export_image')
-		menu_separator()
-		if(menu_item('Purge Volatiles',1)){deck_purge(deck),msg.next_view=1}
-		menu_separator()
-		if(menu_item('Cards...'     ,1,'C'))modal_enter('cards')
-		if(menu_item('Sounds...'    ,1,'S'))modal_enter('sounds')
-		if(menu_item('Prototypes...',1,'T'))modal_enter('contraptions')
-		if(menu_item('Resources...' ,1,   ))modal_enter('resources')
-		if(menu_item('Properties...',1,   ))modal_enter('deck_props')
-	}
+			if(menu_item(ui_text('command.new_card','New Card'),1)){const c=deck_add(deck,lms('card')), n=ln(ifield(ifield(deck,'card'),'index'));iwrite(c,lms('index'),lmn(n+1)),n_go([c],deck)}
+			menu_separator()
+			menu_item(ui_text('command.open','Open...'),1,0,_=>open_text('.html,.deck',text=>{load_deck(deck_read(text))}))
+			if(menu_item(ui_text('command.save_as','Save As...'),1))modal_enter('save_deck')
+			menu_separator()
+			menu_item(ui_text('command.import_image','Import Image...'),1,0,_=>{open_file('image/*',load_image)})
+			if(menu_item(ui_text('command.export_image','Export Image...'),1))modal_enter('export_image')
+			menu_separator()
+			if(menu_item(ui_text('command.purge_volatiles','Purge Volatiles'),1)){deck_purge(deck),msg.next_view=1}
+			menu_separator()
+			if(menu_item(ui_text('command.cards','Cards...')          ,1,'C'))modal_enter('cards')
+			if(menu_item(ui_text('command.sounds','Sounds...')        ,1,'S'))modal_enter('sounds')
+			if(menu_item(ui_text('command.prototypes','Prototypes...'),1,'T'))modal_enter('contraptions')
+			if(menu_item(ui_text('command.resources','Resources...')  ,1,   ))modal_enter('resources')
+			if(menu_item(ui_text('command.properties','Properties...'),1,   ))modal_enter('deck_props')
+		}
 	if(ms.type==null||wid.gv||wid.fv){
-		menu_bar("Edit",wid.gv||wid.fv||(ms.type==null&&uimode=='interact')||uimode=='draw'||uimode=='object')
+			menu_bar(ui_text('menu.edit','Edit'),wid.gv||wid.fv||(ms.type==null&&uimode=='interact')||uimode=='draw'||uimode=='object')
 		if(wid.gv){
 			const mutable=!wid.g.locked&&ms.type==null
-			if(menu_item('Undo',wid.hist_cursor>0              ,'z'))grid_undo()
-			if(menu_item('Redo',wid.hist_cursor<wid.hist.length,'Z'))grid_redo()
+				if(menu_item(ui_text('command.undo','Undo'),wid.hist_cursor>0              ,'z'))grid_undo()
+				if(menu_item(ui_text('command.redo','Redo'),wid.hist_cursor<wid.hist.length,'Z'))grid_redo()
 			menu_separator()
-			if(menu_item('Copy Table',1,'c',menucopy)){}
-			if(menu_item('Paste Table',mutable,'v',menupaste)){}
-			menu_separator()
-			if(menu_item('Delete Row',mutable&&wid.gv.row!=-1))grid_deleterow()
-			if(menu_item('Add Row',mutable))grid_insertrow()
-			if(menu_item('Query...',ms.type==null,'u'))modal_enter('query')
+				if(menu_item(ui_text('command.copy_table','Copy Table'),1,'c',menucopy)){}
+				if(menu_item(ui_text('command.paste_table','Paste Table'),mutable,'v',menupaste)){}
+				menu_separator()
+				if(menu_item(ui_text('command.delete_row','Delete Row'),mutable&&wid.gv.row!=-1))grid_deleterow()
+				if(menu_item(ui_text('command.add_row','Add Row'),mutable))grid_insertrow()
+				if(menu_item(ui_text('command.query','Query...'),ms.type==null,'u'))modal_enter('query')
 		}
 		if(wid.fv)text_edit_menu()
 		if(ms.type==null&&uimode=='interact'){
-			if(menu_item('Undo',has_undo(),'z'))undo()
-			if(menu_item('Redo',has_redo(),'Z'))redo()
+				if(menu_item(ui_text('command.undo','Undo'),has_undo(),'z'))undo()
+				if(menu_item(ui_text('command.redo','Redo'),has_redo(),'Z'))redo()
 			menu_separator()
-			if(menu_item('Paste',1,'v',menupaste)){}
+				if(menu_item(ui_text('command.paste','Paste'),1,'v',menupaste)){}
 		}
 		if(ms.type==null&&uimode=='draw'){
 			const sel=bg_has_sel()||bg_has_lasso()
-			if(menu_item('Undo',(!sel)&&has_undo(),'z'))undo()
-			if(menu_item('Redo',(!sel)&&has_redo(),'Z'))redo()
+				if(menu_item(ui_text('command.undo','Undo'),(!sel)&&has_undo(),'z'))undo()
+				if(menu_item(ui_text('command.redo','Redo'),(!sel)&&has_redo(),'Z'))redo()
 			menu_separator()
-			if(menu_item('Cut Image',sel,0,menucut)){}
-			if(menu_item('Copy Image',sel,0,menucopy)){}
-			if(menu_item('Paste',1,'v',menupaste)){}
-			if(menu_item('Clear',1)){const t=dr.tool;if(!sel){settool('select'),dr.sel_here=rcopy(con_dim())}bg_delete_selection(),settool(t)}
-			menu_separator()
-			if(menu_item('Select All',1,'a')){settool('select'),dr.sel_here=rcopy(con_dim())}
-			if(menu_item('Tight Selection',sel,'g'))bg_tighten()
-			if(menu_item('Add Outline',sel))bg_outline()
-			if(menu_item('Resize to Original',sel&&dr.tool=='select',0)){bg_scoop_selection();const s=dr.limbo.size;dr.sel_here.w=s.x,dr.sel_here.h=s.y}
-			if(menu_item(`Resize to ${prototype_is(con())?'Prototype':'Card'}`,sel&&dr.tool=='select',0)){bg_scoop_selection(),dr.sel_here=con_dim()}
-			menu_separator()
-			if(menu_item('Invert',sel&&!dr.limbo_dither,'i')){
+				if(menu_item(ui_text('command.cut_image','Cut Image'),sel,0,menucut)){}
+				if(menu_item(ui_text('command.copy_image','Copy Image'),sel,0,menucopy)){}
+				if(menu_item(ui_text('command.paste','Paste'),1,'v',menupaste)){}
+				if(menu_item(ui_text('command.clear','Clear'),1)){const t=dr.tool;if(!sel){settool('select'),dr.sel_here=rcopy(con_dim())}bg_delete_selection(),settool(t)}
+				menu_separator()
+				if(menu_item(ui_text('command.select_all','Select All'),1,'a')){settool('select'),dr.sel_here=rcopy(con_dim())}
+				if(menu_item(ui_text('command.tight_selection','Tight Selection'),sel,'g'))bg_tighten()
+				if(menu_item(ui_text('command.add_outline','Add Outline'),sel))bg_outline()
+				if(menu_item(ui_text('command.resize_to_original','Resize to Original'),sel&&dr.tool=='select',0)){bg_scoop_selection();const s=dr.limbo.size;dr.sel_here.w=s.x,dr.sel_here.h=s.y}
+				if(menu_item(prototype_is(con())?ui_text('command.resize_to_prototype','Resize to Prototype'):ui_text('command.resize_to_card','Resize to Card'),sel&&dr.tool=='select',0)){bg_scoop_selection(),dr.sel_here=con_dim()}
+				menu_separator()
+				if(menu_item(ui_text('command.invert','Invert'),sel&&!dr.limbo_dither,'i')){
 				if(bg_has_sel())bg_scoop_selection()
 				const s=dr.limbo.size, pal=deck.patterns.pal.pix
 				for(let z=0;z<dr.limbo.pix.length;z++)dr.limbo.pix[z]=1^draw_pattern(pal,dr.limbo.pix[z],(z%s.x),0|(z/s.x))
 			}
-			if(menu_item('Flip Horizontal',sel)){
+				if(menu_item(ui_text('command.flip_horizontal','Flip Horizontal'),sel)){
 				if(bg_has_sel())bg_scoop_selection()
 				image_flip_h(dr.limbo);if(dr.mask)image_flip_h(dr.mask);if(dr.omask&&dr.limbo_dither)image_flip_h(dr.omask);
 			}
-			if(menu_item('Flip Vertical'  ,sel)){
+				if(menu_item(ui_text('command.flip_vertical','Flip Vertical')  ,sel)){
 				if(bg_has_sel())bg_scoop_selection()
 				image_flip_v(dr.limbo);if(dr.mask)image_flip_v(dr.mask);if(dr.omask&&dr.limbo_dither)image_flip_v(dr.omask);
 			}
-			if(menu_item('Rotate Left',sel,',')){
+				if(menu_item(ui_text('command.rotate_left','Rotate Left'),sel,',')){
 				const s=rect(dr.sel_here.w,dr.sel_here.h)
 				if(bg_has_sel())bg_scoop_selection()
 				image_flip_h(dr.limbo),image_flip(dr.limbo)
@@ -3378,7 +3443,7 @@ all_menus=_=>{
 				if(dr.omask&&dr.limbo_dither)image_flip_h(dr.omask),image_flip(dr.omask)
 				dr.sel_here.w=s.y,dr.sel_here.h=s.x
 			}
-			if(menu_item('Rotate Right',sel,'.')){
+				if(menu_item(ui_text('command.rotate_right','Rotate Right'),sel,'.')){
 				const s=rect(dr.sel_here.w,dr.sel_here.h)
 				if(bg_has_sel())bg_scoop_selection()
 				image_flip(dr.limbo),image_flip_h(dr.limbo)
@@ -3388,45 +3453,45 @@ all_menus=_=>{
 			}
 			if(dr.limbo_dither&&sel){
 				menu_separator()
-				if(menu_item('Lighten Image',dr.dither_threshold>-2.0))dr.dither_threshold-=.1
-				if(menu_item('Darken  Image',dr.dither_threshold< 2.0))dr.dither_threshold+=.1
+					if(menu_item(ui_text('command.lighten_image','Lighten Image'),dr.dither_threshold>-2.0))dr.dither_threshold-=.1
+					if(menu_item(ui_text('command.darken_image','Darken Image'),dr.dither_threshold< 2.0))dr.dither_threshold+=.1
 			}
 		}
 		if(ms.type==null&&uimode=='object'){
-			if(menu_item('Undo',has_undo(),'z'))undo()
-			if(menu_item('Redo',has_redo(),'Z'))redo()
+				if(menu_item(ui_text('command.undo','Undo'),has_undo(),'z'))undo()
+				if(menu_item(ui_text('command.redo','Redo'),has_redo(),'Z'))redo()
+				menu_separator()
+				if(menu_item(ui_text('command.cut_widgets','Cut Widgets'),ob.sel.length,'x',menucut)){}
+				if(menu_item(ui_text('command.copy_widgets','Copy Widgets'),ob.sel.length,'c',menucopy)){}
+				if(menu_item(ui_text('command.copy_image','Copy Image'),ob.sel.length==1,0,copywidgetimg)){}
+				if(menu_item(ui_text('command.paste','Paste'),1,'v',menupaste)){}
 			menu_separator()
-			if(menu_item('Cut Widgets',ob.sel.length,'x',menucut)){}
-			if(menu_item('Copy Widgets',ob.sel.length,'c',menucopy)){}
-			if(menu_item('Copy Image',ob.sel.length==1,0,copywidgetimg)){}
-			if(menu_item('Paste',1,'v',menupaste)){}
+				if(menu_item(ui_text('command.paste_as_new_canvas','Paste as new Canvas'),1,0,pasteascanvas)){}
+				if(menu_item(ui_text('command.paste_into_canvas','Paste into Canvas'),ob.sel.length==1&&canvas_is(ob.sel[0]),0,pasteintocanvas)){}
 			menu_separator()
-			if(menu_item('Paste as new Canvas',1,0,pasteascanvas)){}
-			if(menu_item('Paste into Canvas',ob.sel.length==1&&canvas_is(ob.sel[0]),0,pasteintocanvas)){}
-			menu_separator()
-			if(menu_item('Select All',1,'a'))ob.sel=con_wids().v.slice(0)
-			if(menu_item('Move to Front',ob.sel.length))ob_order(),ob.sel                   .map(w=>iwrite(w,lms('index'),lmn(RTEXT_END))),mark_dirty()
-			if(menu_item('Move Up'      ,ob.sel.length))ob_move_up()
-			if(menu_item('Move Down'    ,ob.sel.length))ob_move_dn()
-			if(menu_item('Move to Back' ,ob.sel.length))ob_order(),ob.sel.slice(0).reverse().map(w=>iwrite(w,lms('index'),ZERO          )),mark_dirty()
+				if(menu_item(ui_text('command.select_all','Select All'),1,'a'))ob.sel=con_wids().v.slice(0)
+				if(menu_item(ui_text('command.move_to_front','Move to Front'),ob.sel.length))ob_order(),ob.sel                   .map(w=>iwrite(w,lms('index'),lmn(RTEXT_END))),mark_dirty()
+				if(menu_item(ui_text('command.move_up','Move Up')            ,ob.sel.length))ob_move_up()
+				if(menu_item(ui_text('command.move_down','Move Down')        ,ob.sel.length))ob_move_dn()
+				if(menu_item(ui_text('command.move_to_back','Move to Back')  ,ob.sel.length))ob_order(),ob.sel.slice(0).reverse().map(w=>iwrite(w,lms('index'),ZERO          )),mark_dirty()
 		}
 		if(wid.fv&&wid.f){
 			const selection=wid.fv!=null&&wid.cursor.x!=wid.cursor.y
-			menu_bar('Text',selection&&wid.f.style!='plain')
+				menu_bar(ui_text('menu.text','Text'),selection&&wid.f.style!='plain')
 			if(wid.f.style=='rich'){
-				if(menu_item('Heading'    ,selection))field_fontspan(lms('menu'))
-				if(menu_item('Body'       ,selection))field_fontspan(lms(''    ))
-				if(menu_item('Fixed Width',selection))field_fontspan(lms('mono'))
-				if(menu_item('Link...'    ,selection))modal_push('link')
-			}
-			else if(wid.f.style=='code'){
-				if(menu_item('Indent'        ,1    ))field_indent(1)
-				if(menu_item('Unindent'      ,1    ))field_indent(0)
-				if(menu_item('Toggle Comment',1,'/'))field_comment()
+					if(menu_item(ui_text('command.heading','Heading')          ,selection))field_fontspan(lms('menu'))
+					if(menu_item(ui_text('command.body','Body')                ,selection))field_fontspan(lms(''    ))
+					if(menu_item(ui_text('command.fixed_width','Fixed Width')  ,selection))field_fontspan(lms('mono'))
+					if(menu_item(ui_text('command.link','Link...')             ,selection))modal_push('link')
+				}
+				else if(wid.f.style=='code'){
+					if(menu_item(ui_text('command.indent','Indent')                ,1    ))field_indent(1)
+					if(menu_item(ui_text('command.unindent','Unindent')            ,1    ))field_indent(0)
+					if(menu_item(ui_text('command.toggle_comment','Toggle Comment'),1,'/'))field_comment()
 			}
 			if(wid.f&&wid.f.style!='code'){
-				if(menu_item('Font...',wid.f.style!='plain'))modal_push('fonts')
-				if(menu_item("Pattern...",wid.f&&wid.f.style!='plain')){
+					if(menu_item(ui_text('command.font','Font...'),wid.f.style!='plain'))modal_push('fonts')
+					if(menu_item(ui_text('command.pattern','Pattern...'),wid.f&&wid.f.style!='plain')){
 					ob.pending_pattern=ln(tab_get(rtext_span(wid.fv.table,wid.cursor),'pat')[0])
 					modal_push('spanpattern')
 				}
@@ -3434,143 +3499,143 @@ all_menus=_=>{
 		}
 	}
 	if(ms.type=='recording'&&!wid.fv){
-		menu_bar('Edit',au.mode=='stopped')
-		if(menu_item('Undo',au.hist_cursor>0             ,'z'))sound_undo()
-		if(menu_item('Redo',au.hist_cursor<au.hist.length,'Z'))sound_redo()
+			menu_bar(ui_text('menu.edit','Edit'),au.mode=='stopped')
+			if(menu_item(ui_text('command.undo','Undo'),au.hist_cursor>0             ,'z'))sound_undo()
+			if(menu_item(ui_text('command.redo','Redo'),au.hist_cursor<au.hist.length,'Z'))sound_redo()
 		menu_separator()
-		if(menu_item('Cut Sound'  ,1,'x',menucut)){}
-		if(menu_item('Copy Sound' ,1,'c',menucopy)){}
-		if(menu_item('Paste Sound',1,'v',menupaste)){}
-		if(menu_item('Clear',1,0))sound_delete()
-		menu_separator()
-		if(menu_item('Select All',1,'a'))au.head=0,au.sel=rect(0,au.target.data.length-1)
-	}
-	if((uimode=='interact'||uimode=='draw'||uimode=='object')&&card_is(con())){
-		menu_bar('Card',ms.type==null&&!kc.on)
-		if(menu_item('Go to First'   ,1))n_go([lms('First')],deck)
-		if(menu_item('Go to Previous',1))n_go([lms('Prev' )],deck)
-		if(menu_item('Go to Next'    ,1))n_go([lms('Next' )],deck)
-		if(menu_item('Go to Last'    ,1))n_go([lms('Last' )],deck)
-		if(menu_item('Go Back',deck.history.length>1))n_go([lms('Back')],deck)
-		menu_separator()
-		if(menu_item('Cut Card',1,0,cutcard)){}
-		if(menu_item('Copy Card',1,0,copycard)){}
-		menu_separator()
-		if(menu_item('Script...'    ,1))setscript(con())
-		if(menu_item('Properties...',1))modal_enter('card_props')
-	}
-	if((uimode=='interact'||uimode=='draw'||uimode=='object')&&prototype_is(con())){
-		menu_bar('Prototype',ms.type==null&&!kc.on)
+			if(menu_item(ui_text('command.cut_sound','Cut Sound')    ,1,'x',menucut)){}
+			if(menu_item(ui_text('command.copy_sound','Copy Sound')  ,1,'c',menucopy)){}
+			if(menu_item(ui_text('command.paste_sound','Paste Sound'),1,'v',menupaste)){}
+			if(menu_item(ui_text('command.clear','Clear'),1,0))sound_delete()
+			menu_separator()
+			if(menu_item(ui_text('command.select_all','Select All'),1,'a'))au.head=0,au.sel=rect(0,au.target.data.length-1)
+		}
+		if((uimode=='interact'||uimode=='draw'||uimode=='object')&&card_is(con())){
+			menu_bar(ui_text('menu.card','Card'),ms.type==null&&!kc.on)
+			if(menu_item(ui_text('command.go_first','Go to First')       ,1))n_go([lms('First')],deck)
+			if(menu_item(ui_text('command.go_previous','Go to Previous'),1))n_go([lms('Prev' )],deck)
+			if(menu_item(ui_text('command.go_next','Go to Next')        ,1))n_go([lms('Next' )],deck)
+			if(menu_item(ui_text('command.go_last','Go to Last')        ,1))n_go([lms('Last' )],deck)
+			if(menu_item(ui_text('command.go_back','Go Back'),deck.history.length>1))n_go([lms('Back')],deck)
+			menu_separator()
+			if(menu_item(ui_text('command.cut_card','Cut Card'),1,0,cutcard)){}
+			if(menu_item(ui_text('command.copy_card','Copy Card'),1,0,copycard)){}
+			menu_separator()
+			if(menu_item(ui_text('command.script','Script...')        ,1))setscript(con())
+			if(menu_item(ui_text('command.properties','Properties...'),1))modal_enter('card_props')
+		}
+		if((uimode=='interact'||uimode=='draw'||uimode=='object')&&prototype_is(con())){
+			menu_bar(ui_text('menu.prototype','Prototype'),ms.type==null&&!kc.on)
 		const def=con(), defs=deck.contraptions
-		if(menu_item('Close',1))con_set(null)
-		if(menu_item('Go to Previous',count(defs)>1)){ev.dir='left' ,tracking(),ev.dir=0}
-		if(menu_item('Go to Next'    ,count(defs)>1)){ev.dir='right',tracking(),ev.dir=0}
+			if(menu_item(ui_text('dialog.common.close','Close'),1))con_set(null)
+			if(menu_item(ui_text('command.go_previous','Go to Previous'),count(defs)>1)){ev.dir='left' ,tracking(),ev.dir=0}
+			if(menu_item(ui_text('command.go_next','Go to Next')        ,count(defs)>1)){ev.dir='right',tracking(),ev.dir=0}
 		menu_separator()
-		if(menu_item('Script...'    ,1))setscript(con())
-		if(menu_item('Properties...',1))modal_enter('prototype_props')
-		if(menu_item('Attributes...',1))modal_enter('prototype_attrs')
-		if(menu_check('Show Margins',1,ob.show_margins))ob.show_margins^=1
+			if(menu_item(ui_text('command.script','Script...')        ,1))setscript(con())
+			if(menu_item(ui_text('command.properties','Properties...'),1))modal_enter('prototype_props')
+			if(menu_item(ui_text('command.attributes','Attributes...'),1))modal_enter('prototype_attrs')
+			if(menu_check(ui_text('command.show_margins','Show Margins'),1,ob.show_margins))ob.show_margins^=1
 		menu_separator()
 		let r=lb(ifield(def,'resizable'))
-		if(menu_check('Resizable',1,r,0)){r^=1,iwrite(def,lms('resizable'),lmn(r)),mark_dirty()}
-	}
-	if(uimode=='interact'||uimode=='draw'||uimode=='object'){
-		menu_bar('Tool',ms.type==null&&!kc.on)
-		if(menu_check('Interact',1,uimode=='interact',0))setmode('interact')
-		if(menu_check('Widgets' ,1,uimode=='object'  ,0))setmode('object')
-		menu_separator()
-		if(menu_check('Select'     ,1,uimode=='draw'&&dr.tool=='select'     ))settool('select'     )
-		if(menu_check('Lasso'      ,1,uimode=='draw'&&dr.tool=='lasso'      ))settool('lasso'      )
-		if(menu_check('Pencil'     ,1,uimode=='draw'&&dr.tool=='pencil'     ))settool('pencil'     )
-		if(menu_check('Line'       ,1,uimode=='draw'&&dr.tool=='line'       ))settool('line'       )
-		if(menu_check('Flood'      ,1,uimode=='draw'&&dr.tool=='fill'       ))settool('fill'       )
-		if(menu_check('Box'        ,1,uimode=='draw'&&dr.tool=='rect'       ))settool('rect'       )
-		if(menu_check('Filled Box' ,1,uimode=='draw'&&dr.tool=='fillrect'   ))settool('fillrect'   )
-		if(menu_check('Oval'       ,1,uimode=='draw'&&dr.tool=='ellipse'    ))settool('ellipse'    )
-		if(menu_check('Filled Oval',1,uimode=='draw'&&dr.tool=='fillellipse'))settool('fillellipse')
-		if(menu_check('Polygon'    ,1,uimode=='draw'&&dr.tool=='poly'       ))settool('poly'       )
-	}
-	if(uimode=='draw'||uimode=='object'){
-		menu_bar('View',ms.type==null&&!kc.on)
-		if(menu_check('Show Widgets'         ,1,dr.show_widgets))dr.show_widgets^=1
-		if(menu_check('Show Widget Bounds'   ,1,ob.show_bounds ))ob.show_bounds ^=1
-		if(menu_check('Show Widget Names'    ,1,ob.show_names  ))ob.show_names  ^=1
-		if(menu_check('Show Cursor Info'     ,1,ob.show_cursor ))ob.show_cursor ^=1
-		if(menu_check('Show Alignment Guides',1,ob.show_guides ))ob.show_guides ^=1
-		if(menu_check('Show Animation'       ,1,dr.show_anim   ))dr.show_anim   ^=1
-		menu_separator()
-		if(menu_check('Show Grid Overlay',1,dr.show_grid))dr.show_grid^=1
-		if(menu_check('Snap to Grid'     ,1,dr.snap     ))dr.snap     ^=1
-		if(menu_item('Grid and Scale...',1))modal_enter('grid')
-		menu_separator()
-		if(menu_check('Transparency Mask',1,dr.trans_mask))dr.trans_mask^=1
-		if(menu_check('Fat Bits'         ,1,dr.fatbits   )){
+			if(menu_check(ui_text('command.resizable','Resizable'),1,r,0)){r^=1,iwrite(def,lms('resizable'),lmn(r)),mark_dirty()}
+		}
+		if(uimode=='interact'||uimode=='draw'||uimode=='object'){
+			menu_bar(ui_text('menu.tool','Tool'),ms.type==null&&!kc.on)
+			if(menu_check(ui_text('command.interact','Interact'),1,uimode=='interact',0))setmode('interact')
+			if(menu_check(ui_text('menu.widgets','Widgets')    ,1,uimode=='object'  ,0))setmode('object')
+			menu_separator()
+			if(menu_check(ui_text('command.select','Select')          ,1,uimode=='draw'&&dr.tool=='select'     ))settool('select'     )
+			if(menu_check(ui_text('command.lasso','Lasso')            ,1,uimode=='draw'&&dr.tool=='lasso'      ))settool('lasso'      )
+			if(menu_check(ui_text('command.pencil','Pencil')          ,1,uimode=='draw'&&dr.tool=='pencil'     ))settool('pencil'     )
+			if(menu_check(ui_text('command.line','Line')              ,1,uimode=='draw'&&dr.tool=='line'       ))settool('line'       )
+			if(menu_check(ui_text('command.flood','Flood')            ,1,uimode=='draw'&&dr.tool=='fill'       ))settool('fill'       )
+			if(menu_check(ui_text('command.box','Box')                ,1,uimode=='draw'&&dr.tool=='rect'       ))settool('rect'       )
+			if(menu_check(ui_text('command.filled_box','Filled Box')  ,1,uimode=='draw'&&dr.tool=='fillrect'   ))settool('fillrect'   )
+			if(menu_check(ui_text('command.oval','Oval')              ,1,uimode=='draw'&&dr.tool=='ellipse'    ))settool('ellipse'    )
+			if(menu_check(ui_text('command.filled_oval','Filled Oval'),1,uimode=='draw'&&dr.tool=='fillellipse'))settool('fillellipse')
+			if(menu_check(ui_text('command.polygon','Polygon')        ,1,uimode=='draw'&&dr.tool=='poly'       ))settool('poly'       )
+		}
+		if(uimode=='draw'||uimode=='object'){
+			menu_bar(ui_text('menu.view','View'),ms.type==null&&!kc.on)
+			if(menu_check(ui_text('command.show_widgets','Show Widgets')                 ,1,dr.show_widgets))dr.show_widgets^=1
+			if(menu_check(ui_text('command.show_widget_bounds','Show Widget Bounds')     ,1,ob.show_bounds ))ob.show_bounds ^=1
+			if(menu_check(ui_text('command.show_widget_names','Show Widget Names')       ,1,ob.show_names  ))ob.show_names  ^=1
+			if(menu_check(ui_text('command.show_cursor_info','Show Cursor Info')         ,1,ob.show_cursor ))ob.show_cursor ^=1
+			if(menu_check(ui_text('command.show_alignment_guides','Show Alignment Guides'),1,ob.show_guides ))ob.show_guides ^=1
+			if(menu_check(ui_text('command.show_animation','Show Animation')             ,1,dr.show_anim   ))dr.show_anim   ^=1
+			menu_separator()
+			if(menu_check(ui_text('command.show_grid_overlay','Show Grid Overlay'),1,dr.show_grid))dr.show_grid^=1
+			if(menu_check(ui_text('command.snap_to_grid','Snap to Grid')          ,1,dr.snap     ))dr.snap     ^=1
+			if(menu_item(ui_text('command.grid_and_scale','Grid and Scale...'),1))modal_enter('grid')
+			menu_separator()
+			if(menu_check(ui_text('command.transparency_mask','Transparency Mask'),1,dr.trans_mask))dr.trans_mask^=1
+			if(menu_check(ui_text('command.fat_bits','Fat Bits')                  ,1,dr.fatbits   )){
 			if(ms.type==null&&uimode!='draw')setmode('draw')
 			dr.fatbits^=1;if(dr.fatbits)center_fatbits(rcenter(bg_has_sel()||bg_has_lasso()?dr.sel_here:con_dim(),rect()))
 		}
-	}
-	if(uimode=='draw'){
-		menu_bar('Style',ms.type==null&&!kc.on)
-		if(menu_item('Stroke...',1))modal_enter('pattern')
-		if(menu_item('Fill...'  ,1))modal_enter('fill'   )
-		if(menu_item('Brush...' ,1))modal_enter('brush'  )
-		menu_separator()
-		if(menu_check('Color'       ,1,dr.color))dr.color^=1
-		if(menu_check('Transparency',1,dr.trans))dr.trans^=1
-		if(menu_check('Underpaint'  ,1,dr.under))dr.under^=1
-	}
-	if(uimode=='object'){
-		menu_bar('Widgets',ms.type==null)
-		if(menu_item('New Button',1))ob_create([lmd([lms('type')],[lms('button')])])
-		if(menu_item('New Field' ,1))ob_create([lmd([lms('type')],[lms('field' )])])
-		if(menu_item('New Slider',1))ob_create([lmd([lms('type')],[lms('slider')])])
-		if(menu_item('New Canvas',1))ob_create([lmd([lms('type')],[lms('canvas')])])
-		if(menu_item('New Grid'  ,1))ob_create([lmd([lms('type')],[lms('grid'  )])])
-		if(card_is(con())&&menu_item('New Contraption...',1))modal_enter('pick_contraption')
-		if(menu_item('Order...'   ,count(ifield(con(),'widgets'))))modal_enter('orderwids')
+		}
+		if(uimode=='draw'){
+			menu_bar(ui_text('menu.style','Style'),ms.type==null&&!kc.on)
+			if(menu_item(ui_text('command.stroke','Stroke...'),1))modal_enter('pattern')
+			if(menu_item(ui_text('command.fill','Fill...')    ,1))modal_enter('fill'   )
+			if(menu_item(ui_text('command.brush','Brush...')  ,1))modal_enter('brush'  )
+			menu_separator()
+			if(menu_check(ui_text('command.color','Color')              ,1,dr.color))dr.color^=1
+			if(menu_check(ui_text('command.transparency','Transparency'),1,dr.trans))dr.trans^=1
+			if(menu_check(ui_text('command.underpaint','Underpaint')    ,1,dr.under))dr.under^=1
+		}
+		if(uimode=='object'){
+			menu_bar(ui_text('menu.widgets','Widgets'),ms.type==null)
+			if(menu_item(ui_text('command.new_button','New Button'),1))ob_create([lmd([lms('type')],[lms('button')])])
+			if(menu_item(ui_text('command.new_field','New Field')  ,1))ob_create([lmd([lms('type')],[lms('field' )])])
+			if(menu_item(ui_text('command.new_slider','New Slider'),1))ob_create([lmd([lms('type')],[lms('slider')])])
+			if(menu_item(ui_text('command.new_canvas','New Canvas'),1))ob_create([lmd([lms('type')],[lms('canvas')])])
+			if(menu_item(ui_text('command.new_grid','New Grid')    ,1))ob_create([lmd([lms('type')],[lms('grid'  )])])
+			if(card_is(con())&&menu_item(ui_text('command.new_contraption','New Contraption...'),1))modal_enter('pick_contraption')
+			if(menu_item(ui_text('command.order','Order...')       ,count(ifield(con(),'widgets'))))modal_enter('orderwids')
 		menu_separator()
 		let al=1,aa=1,av=1,as=1,at=1,ai=1,an=1
 		ob.sel.map(unpack_widget).map(w=>{al&=w.locked, as&=w.show=='solid', at&=w.show=='transparent', ai&=w.show=='invert', an&=w.show=='none'})
 		ob.sel.map(w=>aa&=lb(ifield(w,'animated')))
 		ob.sel.map(w=>av&=lb(ifield(w,'volatile')))
-		if(menu_check('Locked'          ,ob.sel.length,ob.sel.length&&al))ob_edit_prop('locked'  ,lmn(!al))
-		if(menu_check('Animated'        ,ob.sel.length,ob.sel.length&&aa))ob_edit_prop('animated',lmn(!aa))
-		if(menu_check('Volatile'        ,ob.sel.length,ob.sel.length&&av))ob_edit_prop('volatile',lmn(!av))
+			if(menu_check(ui_text('command.locked','Locked')    ,ob.sel.length,ob.sel.length&&al))ob_edit_prop('locked'  ,lmn(!al))
+			if(menu_check(ui_text('command.animated','Animated'),ob.sel.length,ob.sel.length&&aa))ob_edit_prop('animated',lmn(!aa))
+			if(menu_check(ui_text('command.volatile','Volatile'),ob.sel.length,ob.sel.length&&av))ob_edit_prop('volatile',lmn(!av))
 		menu_separator()
-		if(menu_check('Show Solid'      ,ob.sel.length,ob.sel.length&&as))ob_edit_prop('show',lms('solid'      ))
-		if(menu_check('Show Transparent',ob.sel.length,ob.sel.length&&at))ob_edit_prop('show',lms('transparent'))
-		if(menu_check('Show Inverted'   ,ob.sel.length,ob.sel.length&&ai))ob_edit_prop('show',lms('invert'     ))
-		if(menu_check('Show None'       ,ob.sel.length,ob.sel.length&&an))ob_edit_prop('show',lms('none'       ))
+			if(menu_check(ui_text('command.show_solid','Show Solid')            ,ob.sel.length,ob.sel.length&&as))ob_edit_prop('show',lms('solid'      ))
+			if(menu_check(ui_text('command.show_transparent','Show Transparent'),ob.sel.length,ob.sel.length&&at))ob_edit_prop('show',lms('transparent'))
+			if(menu_check(ui_text('command.show_inverted','Show Inverted')      ,ob.sel.length,ob.sel.length&&ai))ob_edit_prop('show',lms('invert'     ))
+			if(menu_check(ui_text('command.show_none','Show None')              ,ob.sel.length,ob.sel.length&&an))ob_edit_prop('show',lms('none'       ))
 		menu_separator()
-		if(menu_item('Font...',ob.sel.length))modal_enter('fonts')
-		if(menu_item('Pattern...',ob.sel.length)){ob.pending_pattern=ln(ifield(ob.sel[0],'pattern')),modal_enter('widpattern')}
-		if(menu_item('Script...',ob.sel.length)){
+			if(menu_item(ui_text('command.font','Font...'),ob.sel.length))modal_enter('fonts')
+			if(menu_item(ui_text('command.pattern','Pattern...'),ob.sel.length)){ob.pending_pattern=ln(ifield(ob.sel[0],'pattern')),modal_enter('widpattern')}
+			if(menu_item(ui_text('command.script','Script...'),ob.sel.length)){
 			if(ob.sel.reduce((m,v)=>m&&ob.sel[0].script==v.script,1)){setscript(ob.sel)}else{
 				modal_enter('multiscript')
 					ms.message=lms('Not all of the selected widgets\nhave the same script.\nEdit them all together anyway?')
-					ms.verb=lms('Edit')
+						ms.verb=lms(ui_text('dialog.common.edit','Edit'))
 			}
 		}
-		if(menu_item('Properties...',ob.sel.length==1)||(ob.sel.length==1&&ev.action&&ms.type==null))object_properties(ob.sel[0])
-	}
-	if(ms.type=='listen'){
-		menu_bar('Listener',1)
-		if(menu_item('Clear History',1))li.hist=[],li.scroll=0
-		if(menu_item('Clear Locals' ,1))li.vars=new Map()
-		menu_separator()
-		if(menu_item('Show Locals',1)){
+			if(menu_item(ui_text('command.properties','Properties...'),ob.sel.length==1)||(ob.sel.length==1&&ev.action&&ms.type==null))object_properties(ob.sel[0])
+		}
+		if(ms.type=='listen'){
+			menu_bar(ui_text('menu.listener','Listener'),1)
+			if(menu_item(ui_text('command.clear_history','Clear History'),1))li.hist=[],li.scroll=0
+			if(menu_item(ui_text('command.clear_locals','Clear Locals')  ,1))li.vars=new Map()
+			menu_separator()
+			if(menu_item(ui_text('command.show_locals','Show Locals'),1)){
 			const loc=lmd();for(let k of li.vars.keys())dset(loc,lms(k),li.vars.get(k))
 			listen_show(ALIGN.right,0,loc)
 		}
 		menu_separator()
-		if(menu_item('Evaluate',rtext_len(ms.text.table)))listener_eval()
+			if(menu_item(ui_text('command.evaluate','Evaluate'),rtext_len(ms.text.table)))listener_eval()
 	}
-	menu_bar('Help',1)
-	if(menu_item('Decker Website...'  ,1))n_go([lms('http://beyondloom.com/decker/index.html'          )],deck)
-	if(menu_item('Decker Community...',1))n_go([lms('https://internet-janitor.itch.io/decker/community')],deck)
-	if(menu_item('Decker Reference...',1))n_go([lms('http://beyondloom.com/decker/decker.html'         )],deck)
-	if(menu_item('Lil Reference...'   ,1))n_go([lms('http://beyondloom.com/decker/lil.html'            )],deck)
-}
+		menu_bar(ui_text('menu.help','Help'),1)
+		if(menu_item(ui_text('command.decker_website','Decker Website...')    ,1))n_go([lms('http://beyondloom.com/decker/index.html'          )],deck)
+		if(menu_item(ui_text('command.decker_community','Decker Community...'),1))n_go([lms('https://internet-janitor.itch.io/decker/community')],deck)
+		if(menu_item(ui_text('command.decker_reference','Decker Reference...'),1))n_go([lms('http://beyondloom.com/decker/decker.html'         )],deck)
+		if(menu_item(ui_text('command.lil_reference','Lil Reference...')      ,1))n_go([lms('http://beyondloom.com/decker/lil.html'            )],deck)
+	}
 
 main_view=_=>{
 	if(in_layer()&&uimode=='object'&&ob.sel.length==0)tracking()

@@ -1,6 +1,8 @@
 // Decker
 #include "lil.h"
 #include "dom.h"
+#include "ko_ui_strings.h"
+#include "ko_ui_font.h"
 
 int should_exit=0;
 
@@ -54,6 +56,80 @@ void set_path(char*path){
 	snprintf(document_path,PATH_MAX,"%s",path);
 	char t[4096];snprintf(t,sizeof(t),"Decker - %s",drom_to_utf8(lmcstr(path))->sv);
 	window_set_title(strlen(path)?t:"Decker");
+}
+
+static const char* ui_text(const char*id,const char*fallback){
+	for(int z=0;z<KO_UI_STRING_COUNT;z++)if(!strcmp(KO_UI_STRINGS[z].id,id))return KO_UI_STRINGS[z].text;
+	return fallback?fallback:id;
+}
+static unsigned int ui_utf8_next(const char**cursor){
+	const unsigned char*s=(const unsigned char*)*cursor,c=*s;if(!c)return 0;
+	(*cursor)++;if(c<0x80)return c;
+	int need=0;unsigned int value=0;
+	if((c&0xE0)==0xC0){need=1,value=c&0x1F;}
+	else if((c&0xF0)==0xE0){need=2,value=c&0x0F;}
+	else if((c&0xF8)==0xF0){need=3,value=c&0x07;}
+	else return c;
+	for(int z=0;z<need;z++){
+		unsigned char n=(unsigned char)**cursor;
+		if((n&0xC0)!=0x80)return c;
+		(*cursor)++,value=(value<<6)|(n&0x3F);
+	}
+	return value;
+}
+static const ko_ui_glyph_t* ui_glyph(unsigned int codepoint){
+	for(int z=0;z<KO_UI_GLYPH_COUNT;z++)if(KO_UI_GLYPHS[z].codepoint==codepoint)return &KO_UI_GLYPHS[z];
+	return NULL;
+}
+static int ui_lineheight(void){return KO_UI_FONT_LINE_HEIGHT?KO_UI_FONT_LINE_HEIGHT:font_h(FONT_MENU);}
+static int ui_char_width(unsigned int codepoint){
+	const ko_ui_glyph_t*g=ui_glyph(codepoint);
+	if(g)return g->advance;
+	if(FONT_MENU&&codepoint<256)return font_gw(FONT_MENU,codepoint)+font_sw(FONT_MENU);
+	return KO_UI_FONT_LINE_HEIGHT;
+}
+static pair ui_textsize(const char*text){
+	pair cursor={0,0},size={0,ui_lineheight()};const char*at=text?text:"";
+	while(*at){
+		if(*at=='\n'){cursor.x=0,size.y+=ui_lineheight(),at++;continue;}
+		unsigned int codepoint=ui_utf8_next(&at);
+		cursor.x+=ui_char_width(codepoint),size.x=MAX(size.x,cursor.x);
+	}
+	return size;
+}
+static void draw_ui_glyph(pair pos,const ko_ui_glyph_t*glyph,int pattern){
+	for(int y=0;y<glyph->height;y++){
+		const char*row=glyph->rows[y];if(!row)continue;
+		for(int x=0;x<glyph->width&&row[x];x++)if(row[x]!='0')draw_pix(pos.x+glyph->x_offset+x,pos.y+glyph->y_offset+y,pattern);
+	}
+}
+static void draw_ui_text(rect r,const char*text,int pattern){
+	pair cursor={r.x,r.y};const char*at=text?text:"";
+	while(*at){
+		if(*at=='\n'){cursor.x=r.x,cursor.y+=ui_lineheight(),at++;continue;}
+		unsigned int codepoint=ui_utf8_next(&at);const ko_ui_glyph_t*glyph=ui_glyph(codepoint);
+		if(glyph){draw_ui_glyph(cursor,glyph,pattern),cursor.x+=glyph->advance;}
+		else if(FONT_MENU&&codepoint<256){char fallback[2]={(char)codepoint,0};draw_text((rect){cursor.x,cursor.y,0,0},fallback,FONT_MENU,pattern),cursor.x+=ui_char_width(codepoint);}
+	}
+}
+static void draw_ui_text_fit(rect r,const char*text,int pattern){
+	char out[1024];int oi=0,width=0,ellipsis=ui_char_width('.')*3;const char*at=text?text:"";
+	while(*at&&oi<(int)sizeof(out)-4){
+		if(*at=='\n')break;
+		const char*before=at;unsigned int codepoint=ui_utf8_next(&at);int next=ui_char_width(codepoint);
+		if(width+next>=r.w-ellipsis){out[oi++]='.',out[oi++]='.',out[oi++]='.';break;}
+		while(before<at&&oi<(int)sizeof(out)-1)out[oi++]=*before++;
+		width+=next;
+	}
+	out[oi]=0;pair size=ui_textsize(out);draw_ui_text((rect){r.x,r.y+ceil((r.h-size.y)/2.0),r.w,size.y},out,pattern);
+}
+static void draw_ui_textc(rect r,const char*text,int pattern){
+	pair size=ui_textsize(text);
+	if(size.x<r.w)draw_ui_text(box_center(r,size),text,pattern);else draw_ui_text_fit(r,text,pattern);
+}
+static void draw_ui_textr(rect r,const char*text,int pattern){
+	pair size=ui_textsize(text);
+	if(size.x<r.w)draw_ui_text((rect){r.x+r.w-size.x,r.y+ceil((r.h-size.y)/2.0),size.x,size.y},text,pattern);else draw_ui_text_fit(r,text,pattern);
 }
 
 typedef struct {
@@ -345,7 +421,7 @@ void menu_setup(void){
 }
 void menu_bar(char*name,int enabled){
 	if(menus_off())enabled=0;
-	rect t=rect_pair((pair){menu.x,2},font_textsize(FONT_MENU,name)), b={t.x-5,0,t.w+10,t.h+3}; int i=menu.head_count;
+	rect t=rect_pair((pair){menu.x,2},ui_textsize(name)), b={t.x-5,0,t.w+10,t.h+3}; int i=menu.head_count;
 	menu.heads[menu.head_count++]=(menu_head){name,enabled,t,b}; menu.x=b.x+b.w+5; if(menus_hidden())return;
 	if(ev.click&&enabled&&over(b)){ev.mu=0;if(menu.stick==-1)menu.stick=i;}
 	if(menu.stick!=-1&&enabled&&over(b))menu.stick=i,menu.lw=0;
@@ -355,12 +431,12 @@ void menu_bar(char*name,int enabled){
 	}if(i==menu.active||i==menu.stick)menu.sz=(rect){b.x,b.h,MAX(b.w,menu.lw),0},menu.item_count=0;
 	if(ev.md&&over(b)&&enabled)ev.md=0;
 }
-int shortcut_w(char c){if(!c)return 0;char tn[8];snprintf(tn,8,"^%c",c);pair s=font_textsize(FONT_MENU,tn);return 10+s.x;}
+int shortcut_w(char c){if(!c)return 0;char tn[8];snprintf(tn,8,"^%c",c);pair s=ui_textsize(tn);return 10+s.x;}
 int menu_check(char*name,int enabled,int check,char shortcut){
 	if(!menu.heads[menu.head_count-1].enabled)return 0;
 	int sc=enabled&&shortcut&&ev.shortcuts[0xFF&shortcut]; if(sc)ev.shortcuts[0xFF&shortcut]=0;
 	if(menu.head_count-1!=menu.active&&menu.head_count-1!=menu.stick)return sc;
-	rect t=name?rect_pair((pair){menu.sz.x+5+8,menu.sz.y+menu.sz.h+2},font_textsize(FONT_MENU,name)): (rect){menu.sz.x,menu.sz.y+menu.sz.h+2,1,1};
+	rect t=name?rect_pair((pair){menu.sz.x+5+8,menu.sz.y+menu.sz.h+2},ui_textsize(name)): (rect){menu.sz.x,menu.sz.y+menu.sz.h+2,1,1};
 	if(shortcut)t.w+=shortcut_w(shortcut);
 	rect b={menu.sz.x,menu.sz.y+menu.sz.h,MAX(menu.sz.w,t.w+10+8),t.h+4};
 	menu.items[menu.item_count++]=(menu_entry){name,enabled,check,shortcut,t,b}, menu.sz=box_union(menu.sz,b);
@@ -375,16 +451,16 @@ void menu_finish(void){
 	for(int i=0;i<menu.head_count;i++){
 		menu_head x=menu.heads[i];int a=x.enabled&&(over(x.b)||i==menu.stick||i==menu.active);
 		if(ev.drag&&!dover(b))a=0;
-		draw_text(x.t,x.name,FONT_MENU,x.enabled?1:13);if(a)draw_invert(pal,x.b);
+			draw_ui_text(x.t,x.name,x.enabled?1:13);if(a)draw_invert(pal,x.b);
 	}
 	if(menu.sz.w){
 		draw_shadow(menu.sz,1,32,1);
 		menu.lw=0;int sw=0;for(int i=0;i<menu.item_count;i++){menu.lw=MAX(menu.lw,menu.items[i].b.w);sw=MAX(sw,shortcut_w(menu.items[i].shortcut));}
 		for(int i=0;i<menu.item_count;i++){
 			menu_entry x=menu.items[i]; int o=over(x.b)&&x.name&&x.enabled;
-			if(x.name){draw_text(x.t,x.name,FONT_MENU,x.enabled?1:13);}else{draw_rect((rect){x.t.x+2,x.t.y,menu.sz.w-5,1},19);}
+				if(x.name){draw_ui_text(x.t,x.name,x.enabled?1:13);}else{draw_rect((rect){x.t.x+2,x.t.y,menu.sz.w-5,1},19);}
 			if(x.check==1)draw_icon((pair){menu.sz.x+2,x.t.y+3},CHECK,x.enabled?1:13);
-			if(x.shortcut){char tn[8];snprintf(tn,8,"^%c",x.shortcut);draw_text((rect){menu.sz.x+menu.sz.w-3-sw+10,x.t.y,0,0},tn,FONT_MENU,x.enabled?1:13);}
+				if(x.shortcut){char tn[8];snprintf(tn,8,"^%c",x.shortcut);draw_ui_text((rect){menu.sz.x+menu.sz.w-3-sw+10,x.t.y,0,0},tn,x.enabled?1:13);}
 			if(o)draw_invert(pal,inset(x.b,1));
 		}if(ev.mu)menu.stick=-1;
 	}
@@ -3718,19 +3794,19 @@ int interpret(void){
 	return FRAME_QUOTA-quota;
 }
 void paste_any(void){
-	if(has_clip("%%IMG")){if(menu_item("Paste Image",1,'v')){
+	if(has_clip("%%IMG")){if(menu_item((char*)ui_text("command.paste_image","Paste Image"),1,'v')){
 		lv*b=image_read(get_clip())->b;setuimode(mode_draw);bg_paste(b,0);
 	}}
-	else if(has_clip("%%WGT")){if(menu_item("Paste Widgets",1,'v')){
+	else if(has_clip("%%WGT")){if(menu_item((char*)ui_text("command.paste_widgets","Paste Widgets"),1,'v')){
 		lv*t=get_clip();int f=1,i=6,n=t->c-i;lv*v=plove(t->sv,&i,&f,&n);
 		lv*defs=dget(v,lmistr("d")),*wids=dget(v,lmistr("w"));wids=wids?ll(wids):lml(0);
 		merge_fonts(deck,dget(v,lmistr("f"))),merge_prototypes(deck,defs?ld(defs):lmd(),wids),ob_create(wids);
 	}}
-	else if(has_clip("%%CRD")){if(menu_item("Paste Card",1,'v')){
+	else if(has_clip("%%CRD")){if(menu_item((char*)ui_text("command.paste_card","Paste Card"),1,'v')){
 		lv*c=n_deck_paste(deck,l_list(get_clip()));con_set(NULL);
 		lv*card=ifield(deck,"card");int n=ln(ifield(card,"index"));iwrite(c,lmistr("index"),lmn(n+1));n_go(deck,l_list(c));
 	}}
-	else{menu_item("Paste",0,'v');}
+	else{menu_item((char*)ui_text("command.paste","Paste"),0,'v');}
 }
 void gestures(void){
 	if(!enable_touch||!card_is(con()))return;lv*wids=con_wids();
@@ -3746,75 +3822,75 @@ void gestures(void){
 void text_edit_menu(void){
 	int selection=wid.fv!=NULL&&wid.cursor.x!=wid.cursor.y;
 	int rich=wid.fv!=NULL&&wid.f.style==field_rich;
-	if(menu_item("Undo",wid.hist_cursor>0          ,'z'))field_undo();
-	if(menu_item("Redo",wid.hist_cursor<wid.hist->c,'Z'))field_redo();
+	if(menu_item((char*)ui_text("command.undo","Undo"),wid.hist_cursor>0          ,'z'))field_undo();
+	if(menu_item((char*)ui_text("command.redo","Redo"),wid.hist_cursor<wid.hist->c,'Z'))field_redo();
 	menu_separator();
-	if(menu_item("Cut",selection,'x')){set_clip(rtext_string(wid.fv->table,wid.cursor,1));field_keys(KEY_DELETE,0);}
-	if(menu_item("Copy",selection,'c')){
+	if(menu_item((char*)ui_text("command.cut","Cut"),selection,'x')){set_clip(rtext_string(wid.fv->table,wid.cursor,1));field_keys(KEY_DELETE,0);}
+	if(menu_item((char*)ui_text("command.copy","Copy"),selection,'c')){
 		lv*s=rtext_span(wid.fv->table,wid.cursor),*i=rtext_is_image(s);
 		set_clip((i?image_write(i):rtext_all(s)));
 	}
-	if(rich&&menu_item("Copy Rich Text",selection,'r'))set_clip(rtext_encode(rtext_span(wid.fv->table,wid.cursor)));
-	if(has_clip("%%IMG")&&rich&&menu_item("Paste Inline Image",wid.fv!=NULL,'v')){field_edit(lmistr(""),image_read(get_clip()),1,"i",wid.cursor);}
-	else if(has_clip("%%RTX")&&rich&&menu_item("Paste Rich Text",wid.fv!=NULL,'v')){field_editr(rtext_decode(get_clip()),wid.cursor);}
-	else if((!has_clip("%%RTX")||!rich)&&menu_item("Paste",wid.fv!=NULL&&strlen(clip_stash),'v')){
+	if(rich&&menu_item((char*)ui_text("command.copy_rich_text","Copy Rich Text"),selection,'r'))set_clip(rtext_encode(rtext_span(wid.fv->table,wid.cursor)));
+	if(has_clip("%%IMG")&&rich&&menu_item((char*)ui_text("command.paste_inline_image","Paste Inline Image"),wid.fv!=NULL,'v')){field_edit(lmistr(""),image_read(get_clip()),1,"i",wid.cursor);}
+	else if(has_clip("%%RTX")&&rich&&menu_item((char*)ui_text("command.paste_rich_text","Paste Rich Text"),wid.fv!=NULL,'v')){field_editr(rtext_decode(get_clip()),wid.cursor);}
+	else if((!has_clip("%%RTX")||!rich)&&menu_item((char*)ui_text("command.paste","Paste"),wid.fv!=NULL&&strlen(clip_stash),'v')){
 		field_input_raw(has_clip("%%RTX")?rtext_all(rtext_decode(get_clip()))->sv:get_clip()->sv);
 	}
-	if(menu_item("Clear",wid.fv!=NULL,0)){wid.cursor=(pair){0,RTEXT_END};field_keys(KEY_DELETE,0);}
+	if(menu_item((char*)ui_text("command.clear","Clear"),wid.fv!=NULL,0)){wid.cursor=(pair){0,RTEXT_END};field_keys(KEY_DELETE,0);}
 	if(!enable_touch&&!kc.on){
 		menu_separator();
-		if(menu_item("Keycaps...",wid.fv!=NULL,'k'))keycaps_force_enter();
+		if(menu_item((char*)ui_text("command.keycaps","Keycaps..."),wid.fv!=NULL,'k'))keycaps_force_enter();
 	}
 	menu_separator();
-	if(menu_item("Select All",wid.fv!=NULL,'a')){wid.cursor=(pair){0,RTEXT_END};}
+	if(menu_item((char*)ui_text("command.select_all","Select All"),wid.fv!=NULL,'a')){wid.cursor=(pair){0,RTEXT_END};}
 }
 void resize_window(lv*deck); // forward ref
 void all_menus(void){
 	int blocked=running()||msg.overshoot;
 	int canlisten=!blocked&&(ms.type==modal_listen||ms.type==modal_none);
-	menu_bar("Decker",canlisten&&!kc.on);
-	if(menu_item("About...",1,'\0'))modal_enter(modal_about);
-	if(menu_check("Listener",canlisten,ms.type==modal_listen,'l')){if(ms.type!=modal_listen){modal_enter(modal_listen);}else{modal_exit(0);}}
+	menu_bar((char*)ui_text("menu.decker","Decker"),canlisten&&!kc.on);
+	if(menu_item((char*)ui_text("command.about","About..."),1,'\0'))modal_enter(modal_about);
+	if(menu_check((char*)ui_text("menu.listener","Listener"),canlisten,ms.type==modal_listen,'l')){if(ms.type!=modal_listen){modal_enter(modal_listen);}else{modal_exit(0);}}
 	menu_separator();
 	#ifndef NO_FULLSCREEN
-		if(menu_check("Fullscreen",1,!windowed,'f' ))toggle_fullscreen=1;
+		if(menu_check((char*)ui_text("command.fullscreen","Fullscreen"),1,!windowed,'f' ))toggle_fullscreen=1;
 	#endif
-	if(menu_check("Touch Input"    ,1                    ,enable_touch   ,'\0')){enable_touch^=1,set_touch=1;if(!enable_touch)kc.on=0;}
-	if(menu_check("Script Profiler",1                    ,profiler       ,'\0'))profiler^=1;
-	if(menu_check("Toolbars"       ,1                    ,toolbars_enable,'\0'))toolbars_enable^=1,resize_window(deck);
-	if(menu_check("Auto-Save"      ,strlen(document_path),autosave       ,'\0'))autosave^=1;
+	if(menu_check((char*)ui_text("command.touch_input","Touch Input")          ,1                    ,enable_touch   ,'\0')){enable_touch^=1,set_touch=1;if(!enable_touch)kc.on=0;}
+	if(menu_check((char*)ui_text("command.script_profiler","Script Profiler")  ,1                    ,profiler       ,'\0'))profiler^=1;
+	if(menu_check((char*)ui_text("command.toolbars","Toolbars")                ,1                    ,toolbars_enable,'\0'))toolbars_enable^=1,resize_window(deck);
+	if(menu_check((char*)ui_text("command.auto_save","Auto-Save")              ,strlen(document_path),autosave       ,'\0'))autosave^=1;
 	#ifndef __ANDROID__
 		menu_separator();
-		if(menu_item("Quit",ms.type==modal_none&&uimode!=mode_script,'q'))quit();
+		if(menu_item((char*)ui_text("command.quit","Quit"),ms.type==modal_none&&uimode!=mode_script,'q'))quit();
 	#endif
 	if(blocked){
-		menu_bar("Script",1);
-		if(menu_item("Stop",1,'\0')){
+		menu_bar((char*)ui_text("menu.script","Script"),1);
+		if(menu_item((char*)ui_text("command.stop","Stop"),1,'\0')){
 			msg.pending_halt=1;
 			if(ms.type!=modal_query&&ms.type!=modal_listen){if(ms.type!=modal_none){modal_exit(0);}setuimode(mode_object);}
 		}
-		menu_bar("Edit",(ms.type==modal_input||ms.type==modal_save)&&wid.fv);
+		menu_bar((char*)ui_text("menu.edit","Edit"),(ms.type==modal_input||ms.type==modal_save)&&wid.fv);
 		text_edit_menu();
 		return;
 	}
-	menu_bar("File",(ms.type==modal_none||ms.type==modal_sounds||ms.type==modal_recording)&&(!kc.on||uimode==mode_script));
+	menu_bar((char*)ui_text("menu.file","File"),(ms.type==modal_none||ms.type==modal_sounds||ms.type==modal_recording)&&(!kc.on||uimode==mode_script));
 	if(uimode==mode_script){
-		if(menu_item("Close Script",1,'\0'))close_script(NULL);
+		if(menu_item((char*)ui_text("command.close_script","Close Script"),1,'\0'))close_script(NULL);
 		menu_separator();
-		if(menu_item("Go to Deck",!deck_is(sc.target)           ,'d'))close_script(deck);
+		if(menu_item((char*)ui_text("command.go_to_deck","Go to Deck"),!deck_is(sc.target)           ,'d'))close_script(deck);
 		lv*container=con();
-		if(prototype_is(container)){if(menu_item("Go to Prototype",sc.target!=container,'e'))close_script(container);}
-		else                       {if(menu_item("Go to Card"     ,sc.target!=container,'e'))close_script(container);}
-		if(menu_check("X-Ray Specs",!kc.on,sc.xray,'r'))sc.xray^=1;
+		if(prototype_is(container)){if(menu_item((char*)ui_text("command.go_to_prototype","Go to Prototype"),sc.target!=container,'e'))close_script(container);}
+		else                       {if(menu_item((char*)ui_text("command.go_to_card","Go to Card")          ,sc.target!=container,'e'))close_script(container);}
+		if(menu_check((char*)ui_text("command.xray_specs","X-Ray Specs"),!kc.on,sc.xray,'r'))sc.xray^=1;
 	}
 	else if(ms.type==modal_sounds){
-		if(menu_item("Import Sound...",1,'\0'))modal_push(modal_import_sound);
+		if(menu_item((char*)ui_text("command.import_sound","Import Sound..."),1,'\0'))modal_push(modal_import_sound);
 	}
 	else if(ms.type==modal_recording){
-		if(menu_item("Close Sound",1,'\0'))modal_exit(0);
+		if(menu_item((char*)ui_text("dialog.common.close","Close"),1,'\0'))modal_exit(0);
 	}
 	else{
-		if(menu_item("New Deck...",1,'\0')){
+		if(menu_item((char*)ui_text("command.new_deck","New Deck..."),1,'\0')){
 			if(dirty&&autosave&&strlen(document_path)){save_deck(lmcstr(document_path));dirty=0;}
 			if(dirty){
 				modal_enter(modal_confirm_new);
@@ -3822,92 +3898,92 @@ void all_menus(void){
 				ms.verb=lmcstr("Discard");
 			}else{load_deck(deck_get(lmistr("")));set_path("");}
 		}
-		if(menu_item("New Card",1,'\0')){
+		if(menu_item((char*)ui_text("command.new_card","New Card"),1,'\0')){
 			lv*c=n_deck_add(deck,l_list(lmistr("card")));int n=ln(ifield(ifield(deck,"card"),"index"));
 			iwrite(c,lmistr("index"),lmn(n+1)),n_go(deck,l_list(c));
 		}
 		menu_separator();
-		if(menu_item("Open...",1,'o'))modal_enter(modal_open_deck);
+		if(menu_item((char*)ui_text("command.open","Open..."),1,'o'))modal_enter(modal_open_deck);
 		int haspath=strlen(document_path)>0;
-		if(menu_item("Save",dirty&&haspath,haspath?'s':'\0'))save_deck(lmcstr(document_path));
-		if(menu_item("Save As...",1,!haspath?'s':'\0'))modal_enter(modal_save_deck);
+		if(menu_item((char*)ui_text("command.save","Save"),dirty&&haspath,haspath?'s':'\0'))save_deck(lmcstr(document_path));
+		if(menu_item((char*)ui_text("command.save_as","Save As..."),1,!haspath?'s':'\0'))modal_enter(modal_save_deck);
 		menu_separator();
-		if(menu_item("Import Image..."   ,1,'\0'))modal_enter(modal_import_image);
-		if(menu_item("Export Image..."   ,1,'\0'))modal_enter(modal_export_image);
+		if(menu_item((char*)ui_text("command.import_image","Import Image...")   ,1,'\0'))modal_enter(modal_import_image);
+		if(menu_item((char*)ui_text("command.export_image","Export Image...")   ,1,'\0'))modal_enter(modal_export_image);
 		menu_separator();
-		if(menu_item("Purge Volatiles",1,'\0')){n_deck_purge(deck,LNIL);msg.next_view=1;}
+		if(menu_item((char*)ui_text("command.purge_volatiles","Purge Volatiles"),1,'\0')){n_deck_purge(deck,LNIL);msg.next_view=1;}
 		menu_separator();
-		if(menu_item("Cards..."     ,1,'C' ))modal_enter(modal_cards);
-		if(menu_item("Sounds..."    ,1,'S' ))modal_enter(modal_sounds);
-		if(menu_item("Prototypes...",1,'T' ))modal_enter(modal_contraptions);
-		if(menu_item("Resources..." ,1,'\0'))modal_enter(modal_resources);
-		if(menu_item("Properties...",1,'\0'))modal_enter(modal_deck_props);
+		if(menu_item((char*)ui_text("command.cards","Cards...")          ,1,'C' ))modal_enter(modal_cards);
+		if(menu_item((char*)ui_text("command.sounds","Sounds...")        ,1,'S' ))modal_enter(modal_sounds);
+		if(menu_item((char*)ui_text("command.prototypes","Prototypes..."),1,'T' ))modal_enter(modal_contraptions);
+		if(menu_item((char*)ui_text("command.resources","Resources...")  ,1,'\0'))modal_enter(modal_resources);
+		if(menu_item((char*)ui_text("command.properties","Properties..."),1,'\0'))modal_enter(modal_deck_props);
 	}
 	if(ms.type==modal_none||wid.gv||wid.fv){
-		menu_bar("Edit",wid.gv||wid.fv||(ms.type==modal_none&&uimode==mode_interact)||uimode==mode_draw||uimode==mode_object);
+			menu_bar((char*)ui_text("menu.edit","Edit"),wid.gv||wid.fv||(ms.type==modal_none&&uimode==mode_interact)||uimode==mode_draw||uimode==mode_object);
 		if(wid.gv){
 			int mutable=!wid.g.locked&&ms.type==modal_none;
-			if(menu_item("Undo",wid.hist_cursor>0          ,'z'))grid_undo();
-			if(menu_item("Redo",wid.hist_cursor<wid.hist->c,'Z'))grid_redo();
-			menu_separator();
-			if(menu_item("Copy Table",1,'c')){
-				set_clip(n_writecsv(NULL,lml2(wid.gv->table,grid_format())));
-			}
-			if(menu_item("Paste Table",mutable&&strlen(clip_stash),'v')){
-				grid_edit(n_readcsv(NULL,lml2(get_clip(),lmcstr(wid.g.format))));
-			}
-			menu_separator();
-			if(menu_item("Delete Row",mutable&&wid.gv->row!=-1,'\0'))grid_deleterow();
-			if(menu_item("Add Row",mutable,'\0'))grid_insertrow();
-			if(menu_item("Query...",ms.type==modal_none,'u'))modal_enter(modal_query);
+				if(menu_item((char*)ui_text("command.undo","Undo"),wid.hist_cursor>0          ,'z'))grid_undo();
+				if(menu_item((char*)ui_text("command.redo","Redo"),wid.hist_cursor<wid.hist->c,'Z'))grid_redo();
+				menu_separator();
+				if(menu_item((char*)ui_text("command.copy_table","Copy Table"),1,'c')){
+					set_clip(n_writecsv(NULL,lml2(wid.gv->table,grid_format())));
+				}
+				if(menu_item((char*)ui_text("command.paste_table","Paste Table"),mutable&&strlen(clip_stash),'v')){
+					grid_edit(n_readcsv(NULL,lml2(get_clip(),lmcstr(wid.g.format))));
+				}
+				menu_separator();
+				if(menu_item((char*)ui_text("command.delete_row","Delete Row"),mutable&&wid.gv->row!=-1,'\0'))grid_deleterow();
+				if(menu_item((char*)ui_text("command.add_row","Add Row"),mutable,'\0'))grid_insertrow();
+				if(menu_item((char*)ui_text("command.query","Query..."),ms.type==modal_none,'u'))modal_enter(modal_query);
 		}
 		if(wid.fv)text_edit_menu();
 		if(ms.type==modal_none&&uimode==mode_interact){
-			if(menu_item("Undo",has_undo(),'z'))undo();
-			if(menu_item("Redo",has_redo(),'Z'))redo();
+				if(menu_item((char*)ui_text("command.undo","Undo"),has_undo(),'z'))undo();
+				if(menu_item((char*)ui_text("command.redo","Redo"),has_redo(),'Z'))redo();
 			menu_separator();
 			paste_any();
 		}
 		if(ms.type==modal_none&&uimode==mode_draw){
 			int sel=bg_has_sel()||bg_has_lasso();
-			if(menu_item("Undo",(!sel)&&has_undo(),'z'))undo();
-			if(menu_item("Redo",(!sel)&&has_redo(),'Z'))redo();
-			menu_separator();
-			if(menu_item("Cut Image",sel,'x')){
-				lv*i=bg_has_lasso()?buffer_mask(dr.limbo,dr.mask): dr.limbo?bg_scaled_limbo():bg_copy_selection(dr.sel_here);
-				bg_scoop_selection(),set_clip(image_write(image_make(i)));bg_delete_selection();
-			}
-			if(menu_item("Copy Image",sel,'c' )){
-				lv*i=bg_has_lasso()?buffer_mask(dr.limbo,dr.mask): dr.limbo?bg_scaled_limbo():bg_copy_selection(dr.sel_here);
-				set_clip(image_write(image_make(i)));
-			}
-			paste_any();
-			if(menu_item("Clear",1,'\0')){int t=dr.tool;if(!sel){settool(tool_select),dr.sel_here=con_dim();}bg_delete_selection();settool(t);}
-			menu_separator();
-			if(menu_item("Select All",1,'a')){settool(tool_select),dr.sel_here=con_dim();}
-			if(menu_item("Tight Selection",sel,'g'))bg_tighten();
-			if(menu_item("Add Outline",sel,'\0'))bg_outline();
-			if(menu_item("Resize to Original",sel&&dr.tool==tool_select,'\0')){
-				bg_scoop_selection();pair s=buff_size(dr.limbo);dr.sel_here.w=s.x,dr.sel_here.h=s.y;
-			}
-			lv*c=con();
-			if(card_is     (c))if(menu_item("Resize to Card"     ,sel&&dr.tool==tool_select,'\0')){bg_scoop_selection(),dr.sel_here=con_dim();}
-			if(prototype_is(c))if(menu_item("Resize to Prototype",sel&&dr.tool==tool_select,'\0')){bg_scoop_selection(),dr.sel_here=con_dim();}
-			menu_separator();
-			if(menu_item("Invert",sel&&!dr.limbo_dither,'i')){
+				if(menu_item((char*)ui_text("command.undo","Undo"),(!sel)&&has_undo(),'z'))undo();
+				if(menu_item((char*)ui_text("command.redo","Redo"),(!sel)&&has_redo(),'Z'))redo();
+				menu_separator();
+				if(menu_item((char*)ui_text("command.cut_image","Cut Image"),sel,'x')){
+					lv*i=bg_has_lasso()?buffer_mask(dr.limbo,dr.mask): dr.limbo?bg_scaled_limbo():bg_copy_selection(dr.sel_here);
+					bg_scoop_selection(),set_clip(image_write(image_make(i)));bg_delete_selection();
+				}
+				if(menu_item((char*)ui_text("command.copy_image","Copy Image"),sel,'c' )){
+					lv*i=bg_has_lasso()?buffer_mask(dr.limbo,dr.mask): dr.limbo?bg_scaled_limbo():bg_copy_selection(dr.sel_here);
+					set_clip(image_write(image_make(i)));
+				}
+				paste_any();
+				if(menu_item((char*)ui_text("command.clear","Clear"),1,'\0')){int t=dr.tool;if(!sel){settool(tool_select),dr.sel_here=con_dim();}bg_delete_selection();settool(t);}
+				menu_separator();
+				if(menu_item((char*)ui_text("command.select_all","Select All"),1,'a')){settool(tool_select),dr.sel_here=con_dim();}
+				if(menu_item((char*)ui_text("command.tight_selection","Tight Selection"),sel,'g'))bg_tighten();
+				if(menu_item((char*)ui_text("command.add_outline","Add Outline"),sel,'\0'))bg_outline();
+				if(menu_item((char*)ui_text("command.resize_to_original","Resize to Original"),sel&&dr.tool==tool_select,'\0')){
+					bg_scoop_selection();pair s=buff_size(dr.limbo);dr.sel_here.w=s.x,dr.sel_here.h=s.y;
+				}
+				lv*c=con();
+				if(card_is     (c))if(menu_item((char*)ui_text("command.resize_to_card","Resize to Card")          ,sel&&dr.tool==tool_select,'\0')){bg_scoop_selection(),dr.sel_here=con_dim();}
+				if(prototype_is(c))if(menu_item((char*)ui_text("command.resize_to_prototype","Resize to Prototype"),sel&&dr.tool==tool_select,'\0')){bg_scoop_selection(),dr.sel_here=con_dim();}
+				menu_separator();
+				if(menu_item((char*)ui_text("command.invert","Invert"),sel&&!dr.limbo_dither,'i')){
 				if(bg_has_sel())bg_scoop_selection();
 				pair s=buff_size(dr.limbo);char*pal=patterns_pal(ifield(deck,"patterns"));
 				EACH(z,dr.limbo)dr.limbo->sv[z]=1^draw_pattern(pal,dr.limbo->sv[z],(z%s.x),(z/s.x));
 			}
-			if(menu_item("Flip Horizontal",sel,'\0')){
+				if(menu_item((char*)ui_text("command.flip_horizontal","Flip Horizontal"),sel,'\0')){
 				if(bg_has_sel())bg_scoop_selection();
 				buffer_flip_h(dr.limbo);if(dr.mask)buffer_flip_h(dr.mask);if(dr.omask&&dr.limbo_dither)buffer_flip_h(dr.omask);
 			}
-			if(menu_item("Flip Vertical",sel,'\0')){
+				if(menu_item((char*)ui_text("command.flip_vertical","Flip Vertical"),sel,'\0')){
 				if(bg_has_sel())bg_scoop_selection();
 				buffer_flip_v(dr.limbo);if(dr.mask)buffer_flip_v(dr.mask);if(dr.omask&&dr.limbo_dither)buffer_flip_v(dr.omask);
 			}
-			if(menu_item("Rotate Left",sel,',')){
+				if(menu_item((char*)ui_text("command.rotate_left","Rotate Left"),sel,',')){
 				pair s={dr.sel_here.w,dr.sel_here.h};
 				if(bg_has_sel())bg_scoop_selection();
 				buffer_flip_h(dr.limbo),dr.limbo=buffer_transpose(dr.limbo);
@@ -3915,7 +3991,7 @@ void all_menus(void){
 				if(dr.omask&&dr.limbo_dither)buffer_flip_h(dr.omask),dr.omask=buffer_transpose(dr.omask);
 				dr.sel_here.w=s.y,dr.sel_here.h=s.x;
 			}
-			if(menu_item("Rotate Right",sel,'.')){
+				if(menu_item((char*)ui_text("command.rotate_right","Rotate Right"),sel,'.')){
 				pair s={dr.sel_here.w,dr.sel_here.h};
 				if(bg_has_sel())bg_scoop_selection();
 				dr.limbo=buffer_transpose(dr.limbo),buffer_flip_h(dr.limbo);
@@ -3925,51 +4001,51 @@ void all_menus(void){
 			}
 			if(dr.limbo_dither&&sel){
 				menu_separator();
-				if(menu_item("Lighten Image",dither_threshold>-2.0,'j'))dither_threshold-=.1;
-				if(menu_item("Darken  Image",dither_threshold< 2.0,'k'))dither_threshold+=.1;
+					if(menu_item((char*)ui_text("command.lighten_image","Lighten Image"),dither_threshold>-2.0,'j'))dither_threshold-=.1;
+					if(menu_item((char*)ui_text("command.darken_image","Darken Image"),dither_threshold< 2.0,'k'))dither_threshold+=.1;
 			}
 		}
 		if(ms.type==modal_none&&uimode==mode_object){
-			if(menu_item("Undo",has_undo(),'z'))undo();
-			if(menu_item("Redo",has_redo(),'Z'))redo();
-			menu_separator();
-			if(menu_item("Cut Widgets" ,ob.sel->c,'x' )){ob_order();set_clip(n_con_copy(con(),l_list(ob.sel)));ob_destroy();}
-			if(menu_item("Copy Widgets",ob.sel->c,'c' )){ob_order();set_clip(n_con_copy(con(),l_list(ob.sel)));}
-			if(menu_item("Copy Image",ob.sel->c==1,'\0')){set_clip(image_write(draw_widget(ob.sel->lv[0])));frame=context;}
-			paste_any();
-			menu_separator();
-			if(menu_item("Paste as new Canvas",has_clip("%%IMG"),'\0')){
+				if(menu_item((char*)ui_text("command.undo","Undo"),has_undo(),'z'))undo();
+				if(menu_item((char*)ui_text("command.redo","Redo"),has_redo(),'Z'))redo();
+				menu_separator();
+				if(menu_item((char*)ui_text("command.cut_widgets","Cut Widgets")  ,ob.sel->c,'x' )){ob_order();set_clip(n_con_copy(con(),l_list(ob.sel)));ob_destroy();}
+				if(menu_item((char*)ui_text("command.copy_widgets","Copy Widgets"),ob.sel->c,'c' )){ob_order();set_clip(n_con_copy(con(),l_list(ob.sel)));}
+				if(menu_item((char*)ui_text("command.copy_image","Copy Image"),ob.sel->c==1,'\0')){set_clip(image_write(draw_widget(ob.sel->lv[0])));frame=context;}
+				paste_any();
+				menu_separator();
+				if(menu_item((char*)ui_text("command.paste_as_new_canvas","Paste as new Canvas"),has_clip("%%IMG"),'\0')){
 				lv*p=lmd();dset(p,lmistr("type"),lmistr("canvas")),dset(p,lmistr("locked"),ONE),dset(p,lmistr("border"),ZERO);
 				dset(p,lmistr("image"),get_clip()),ob_create(l_list(p));frame=context;
 			}
-			if(menu_item("Paste into Canvas",has_clip("%%IMG")&&ob.sel->c==1&&canvas_is(ob.sel->lv[0]),'\0')){
+				if(menu_item((char*)ui_text("command.paste_into_canvas","Paste into Canvas"),has_clip("%%IMG")&&ob.sel->c==1&&canvas_is(ob.sel->lv[0]),'\0')){
 				lv*i=image_read(get_clip());
 				lv*c=ob.sel->lv[0];iwrite(c,lmistr("lsize"),ifield(i,"size")),dset(c->b,lmistr("image"),i);
 			}
 			menu_separator();
-			if(menu_item("Select All",1,'a')){lv*wids=con_wids();ob.sel->c=0;EACH(z,wids)ll_add(ob.sel,wids->lv[z]);}
-			if(menu_item("Move to Front",ob.sel->c,'\0')){ob_order();EACH(z,ob.sel){iwrite(ob.sel->lv[z],lmistr("index"),lmn(RTEXT_END));}mark_dirty();}
-			if(menu_item("Move Up"      ,ob.sel->c,'\0')){ob_move_up();}
-			if(menu_item("Move Down"    ,ob.sel->c,'\0')){ob_move_dn();}
-			if(menu_item("Move to Back" ,ob.sel->c,'\0')){ob_order();EACHR(z,ob.sel){iwrite(ob.sel->lv[z],lmistr("index"),ZERO);};mark_dirty();}
+				if(menu_item((char*)ui_text("command.select_all","Select All"),1,'a')){lv*wids=con_wids();ob.sel->c=0;EACH(z,wids)ll_add(ob.sel,wids->lv[z]);}
+				if(menu_item((char*)ui_text("command.move_to_front","Move to Front"),ob.sel->c,'\0')){ob_order();EACH(z,ob.sel){iwrite(ob.sel->lv[z],lmistr("index"),lmn(RTEXT_END));}mark_dirty();}
+				if(menu_item((char*)ui_text("command.move_up","Move Up")            ,ob.sel->c,'\0')){ob_move_up();}
+				if(menu_item((char*)ui_text("command.move_down","Move Down")        ,ob.sel->c,'\0')){ob_move_dn();}
+				if(menu_item((char*)ui_text("command.move_to_back","Move to Back")  ,ob.sel->c,'\0')){ob_order();EACHR(z,ob.sel){iwrite(ob.sel->lv[z],lmistr("index"),ZERO);};mark_dirty();}
 		}
 		if(wid.fv){
 			int selection=wid.fv!=NULL&&wid.cursor.x!=wid.cursor.y;
-			menu_bar("Text",selection&&wid.f.style!=field_plain);
+				menu_bar((char*)ui_text("menu.text","Text"),selection&&wid.f.style!=field_plain);
 			if(wid.f.style==field_rich){
-				if(menu_item("Heading"    ,selection,'\0'))field_fontspan(lmistr("menu"));
-				if(menu_item("Body"       ,selection,'\0'))field_fontspan(lmistr(""    ));
-				if(menu_item("Fixed Width",selection,'\0'))field_fontspan(lmistr("mono"));
-				if(menu_item("Link..."    ,selection,'\0'))modal_push(modal_link);
-			}
-			else if(wid.f.style==field_code){
-				if(menu_item("Indent"        ,1,'\0'))field_indent(1);
-				if(menu_item("Unindent"      ,1,'\0'))field_indent(0);
-				if(menu_item("Toggle Comment",1,'/' ))field_comment();
-			}
-			if(wid.f.style!=field_code){
-				if(menu_item("Font...",wid.f.style!=field_plain,'\0'))modal_push(modal_fonts);
-				if(menu_item("Pattern...",wid.f.style!=field_plain,'\0')){
+					if(menu_item((char*)ui_text("command.heading","Heading")        ,selection,'\0'))field_fontspan(lmistr("menu"));
+					if(menu_item((char*)ui_text("command.body","Body")              ,selection,'\0'))field_fontspan(lmistr(""    ));
+					if(menu_item((char*)ui_text("command.fixed_width","Fixed Width"),selection,'\0'))field_fontspan(lmistr("mono"));
+					if(menu_item((char*)ui_text("command.link","Link...")           ,selection,'\0'))modal_push(modal_link);
+				}
+				else if(wid.f.style==field_code){
+					if(menu_item((char*)ui_text("command.indent","Indent")                ,1,'\0'))field_indent(1);
+					if(menu_item((char*)ui_text("command.unindent","Unindent")            ,1,'\0'))field_indent(0);
+					if(menu_item((char*)ui_text("command.toggle_comment","Toggle Comment"),1,'/' ))field_comment();
+				}
+				if(wid.f.style!=field_code){
+					if(menu_item((char*)ui_text("command.font","Font..."),wid.f.style!=field_plain,'\0'))modal_push(modal_fonts);
+					if(menu_item((char*)ui_text("command.pattern","Pattern..."),wid.f.style!=field_plain,'\0')){
 					ob.pending_pattern=ln(l_first(dget(rtext_span(wid.fv->table,wid.cursor),lmistr("pat"))));
 					modal_push(modal_spanpattern);
 				}
@@ -3977,110 +4053,110 @@ void all_menus(void){
 		}
 	}
 	if(ms.type==modal_recording&&!wid.fv){
-		menu_bar("Edit",au.mode==record_stopped);
-		if(menu_item("Undo",au.hist_cursor>0         ,'z'))sound_undo();
-		if(menu_item("Redo",au.hist_cursor<au.hist->c,'Z'))sound_redo();
-		menu_separator();
-		if(menu_item("Cut Sound"  ,1,'x' )){set_clip(sound_write(sound_selected()));sound_delete();}
-		if(menu_item("Copy Sound" ,1,'c' )){set_clip(sound_write(sound_selected()));}
-		if(menu_item("Paste Sound",has_clip("%%SND"),'v')){
+			menu_bar((char*)ui_text("menu.edit","Edit"),au.mode==record_stopped);
+			if(menu_item((char*)ui_text("command.undo","Undo"),au.hist_cursor>0         ,'z'))sound_undo();
+			if(menu_item((char*)ui_text("command.redo","Redo"),au.hist_cursor<au.hist->c,'Z'))sound_redo();
+			menu_separator();
+			if(menu_item((char*)ui_text("command.cut_sound","Cut Sound")    ,1,'x' )){set_clip(sound_write(sound_selected()));sound_delete();}
+			if(menu_item((char*)ui_text("command.copy_sound","Copy Sound")  ,1,'c' )){set_clip(sound_write(sound_selected()));}
+			if(menu_item((char*)ui_text("command.paste_sound","Paste Sound"),has_clip("%%SND"),'v')){
 			lv*s=sound_read(get_clip());
 			lv*r=sound_slice((pair){0,au.sel.x});int i=au.sel.x; au.head=i;
 			for(int z=0       ;z<s->b->c        &&i<(10*SFX_RATE);z++)r->b->sv[i++]=s->b->sv[z];int a=i;
 			for(int z=au.sel.y;z<au.target->b->c&&i<(10*SFX_RATE);z++)r->b->sv[i++]=au.target->b->sv[z];
 			r->b->c=i;au.sel.y=a;sound_edit(r);
 		}
-		if(menu_item("Clear",1,'\0'))sound_delete();
-		menu_separator();
-		if(menu_item("Select All",1,'a')){au.head=0;au.sel=(pair){0,au.target->b->c-1};}
-	}
-	if((uimode==mode_interact||uimode==mode_draw||uimode==mode_object)&&card_is(con())){
-		menu_bar("Card",ms.type==modal_none&&!kc.on);
-		lv*card=con();
-		if(menu_item("Go to First"   ,1,'\0'))n_go(deck,l_list(lmistr("First")));
-		if(menu_item("Go to Previous",1,'\0'))n_go(deck,l_list(lmistr("Prev")));
-		if(menu_item("Go to Next"    ,1,'\0'))n_go(deck,l_list(lmistr("Next")));
-		if(menu_item("Go to Last"    ,1,'\0'))n_go(deck,l_list(lmistr("Last")));
-		if(menu_item("Go Back",dget(deck->b,lmistr("history"))->c>1,'\0'))n_go(deck,l_list(lmistr("Back")));
-		menu_separator();
-		if(menu_item("Cut Card" ,1,'\0')){set_clip(ls(n_deck_copy(deck,l_list(card))));n_deck_remove(deck,l_list(card));mark_dirty();}
-		if(menu_item("Copy Card",1,'\0')){set_clip(ls(n_deck_copy(deck,l_list(card))));}
-		menu_separator();
-		if(menu_item("Script..."    ,1,'e'))setscript(card);
-		if(menu_item("Properties...",1,'\0'))modal_enter(modal_card_props);
-	}
-	if((uimode==mode_interact||uimode==mode_draw||uimode==mode_object)&&prototype_is(con())){
-		menu_bar("Prototype",ms.type==modal_none&&!kc.on);
-		lv*def=con(),*defs=ifield(deck,"contraptions");
-		if(menu_item("Close",1,'\0'))con_set(NULL);
-		if(menu_item("Go to Previous",defs->c>1,'\0')){ev.dir=dir_left ;tracking();ev.dir=dir_none;}
-		if(menu_item("Go to Next"    ,defs->c>1,'\0')){ev.dir=dir_right;tracking();ev.dir=dir_none;}
-		menu_separator();
-		if(menu_item("Script..."    ,1,'e'))setscript(def);
-		if(menu_item("Properties...",1,'\0'))modal_enter(modal_prototype_props);
-		if(menu_item("Attributes...",1,'\0'))modal_enter(modal_prototype_attrs);
-		if(menu_check("Show Margins",1,ob.show_margins,0))ob.show_margins^=1;
-		menu_separator();
-		int r=lb(ifield(def,"resizable"));
-		if(menu_check("Resizable",1,r,'\0')){r^=1,iwrite(def,lmistr("resizable"),lmn(r)),mark_dirty();}
-	}
-	if(uimode==mode_interact||uimode==mode_draw||uimode==mode_object){
-		menu_bar("Tool",ms.type==modal_none&&!kc.on);
-		if(menu_check("Interact",1,uimode==mode_interact,0))setuimode(mode_interact);
-		if(menu_check("Widgets" ,1,uimode==mode_object  ,0))setuimode(mode_object);
-		menu_separator();
-		if(menu_check("Select"     ,1,uimode==mode_draw&&dr.tool==tool_select     ,0))settool(tool_select     );
-		if(menu_check("Lasso"      ,1,uimode==mode_draw&&dr.tool==tool_lasso      ,0))settool(tool_lasso      );
-		if(menu_check("Pencil"     ,1,uimode==mode_draw&&dr.tool==tool_pencil     ,0))settool(tool_pencil     );
-		if(menu_check("Line"       ,1,uimode==mode_draw&&dr.tool==tool_line       ,0))settool(tool_line       );
-		if(menu_check("Flood"      ,1,uimode==mode_draw&&dr.tool==tool_fill       ,0))settool(tool_fill       );
-		if(menu_check("Box"        ,1,uimode==mode_draw&&dr.tool==tool_rect       ,0))settool(tool_rect       );
-		if(menu_check("Filled Box" ,1,uimode==mode_draw&&dr.tool==tool_fillrect   ,0))settool(tool_fillrect   );
-		if(menu_check("Oval"       ,1,uimode==mode_draw&&dr.tool==tool_ellipse    ,0))settool(tool_ellipse    );
-		if(menu_check("Filled Oval",1,uimode==mode_draw&&dr.tool==tool_fillellipse,0))settool(tool_fillellipse);
-		if(menu_check("Polygon"    ,1,uimode==mode_draw&&dr.tool==tool_poly       ,0))settool(tool_poly       );
-	}
-	if(uimode==mode_draw||uimode==mode_object){
-		menu_bar("View",ms.type==modal_none&&!kc.on);
-		if(menu_check("Show Widgets"         ,1,dr.show_widgets,'\0'))dr.show_widgets^=1;
-		if(menu_check("Show Widget Bounds"   ,1,ob.show_bounds ,'\0'))ob.show_bounds ^=1;
-		if(menu_check("Show Widget Names"    ,1,ob.show_names  ,'\0'))ob.show_names  ^=1;
-		if(menu_check("Show Cursor Info"     ,1,ob.show_cursor ,'\0'))ob.show_cursor ^=1;
-		if(menu_check("Show Alignment Guides",1,ob.show_guides ,'\0'))ob.show_guides ^=1;
-		if(menu_check("Show Animation"       ,1,dr.show_anim   ,'\0'))dr.show_anim   ^=1;
-		menu_separator();
-		if(menu_check("Show Grid Overlay",1,dr.show_grid,0  ))dr.show_grid^=1;
-		if(menu_check("Snap to Grid"     ,1,dr.snap     ,'p'))dr.snap     ^=1;
-		if(menu_item("Grid and Scale..." ,1,'\0'))modal_enter(modal_grid);
-		menu_separator();
-		if(menu_check("Transparency Mask",1,dr.trans_mask  ,0))dr.trans_mask  ^=1;
-		if(menu_check("Fat Bits"         ,1,dr.fatbits     ,0)){
+			if(menu_item((char*)ui_text("command.clear","Clear"),1,'\0'))sound_delete();
+			menu_separator();
+			if(menu_item((char*)ui_text("command.select_all","Select All"),1,'a')){au.head=0;au.sel=(pair){0,au.target->b->c-1};}
+		}
+		if((uimode==mode_interact||uimode==mode_draw||uimode==mode_object)&&card_is(con())){
+			menu_bar((char*)ui_text("menu.card","Card"),ms.type==modal_none&&!kc.on);
+			lv*card=con();
+			if(menu_item((char*)ui_text("command.go_first","Go to First")        ,1,'\0'))n_go(deck,l_list(lmistr("First")));
+			if(menu_item((char*)ui_text("command.go_previous","Go to Previous")  ,1,'\0'))n_go(deck,l_list(lmistr("Prev")));
+			if(menu_item((char*)ui_text("command.go_next","Go to Next")          ,1,'\0'))n_go(deck,l_list(lmistr("Next")));
+			if(menu_item((char*)ui_text("command.go_last","Go to Last")          ,1,'\0'))n_go(deck,l_list(lmistr("Last")));
+			if(menu_item((char*)ui_text("command.go_back","Go Back"),dget(deck->b,lmistr("history"))->c>1,'\0'))n_go(deck,l_list(lmistr("Back")));
+			menu_separator();
+			if(menu_item((char*)ui_text("command.cut_card","Cut Card")  ,1,'\0')){set_clip(ls(n_deck_copy(deck,l_list(card))));n_deck_remove(deck,l_list(card));mark_dirty();}
+			if(menu_item((char*)ui_text("command.copy_card","Copy Card"),1,'\0')){set_clip(ls(n_deck_copy(deck,l_list(card))));}
+			menu_separator();
+			if(menu_item((char*)ui_text("command.script","Script...")        ,1,'e'))setscript(card);
+			if(menu_item((char*)ui_text("command.properties","Properties..."),1,'\0'))modal_enter(modal_card_props);
+		}
+		if((uimode==mode_interact||uimode==mode_draw||uimode==mode_object)&&prototype_is(con())){
+			menu_bar((char*)ui_text("menu.prototype","Prototype"),ms.type==modal_none&&!kc.on);
+			lv*def=con(),*defs=ifield(deck,"contraptions");
+			if(menu_item((char*)ui_text("dialog.common.close","Close"),1,'\0'))con_set(NULL);
+			if(menu_item((char*)ui_text("command.go_previous","Go to Previous"),defs->c>1,'\0')){ev.dir=dir_left ;tracking();ev.dir=dir_none;}
+			if(menu_item((char*)ui_text("command.go_next","Go to Next")        ,defs->c>1,'\0')){ev.dir=dir_right;tracking();ev.dir=dir_none;}
+			menu_separator();
+			if(menu_item((char*)ui_text("command.script","Script...")        ,1,'e'))setscript(def);
+			if(menu_item((char*)ui_text("command.properties","Properties..."),1,'\0'))modal_enter(modal_prototype_props);
+			if(menu_item((char*)ui_text("command.attributes","Attributes..."),1,'\0'))modal_enter(modal_prototype_attrs);
+			if(menu_check((char*)ui_text("command.show_margins","Show Margins"),1,ob.show_margins,0))ob.show_margins^=1;
+			menu_separator();
+			int r=lb(ifield(def,"resizable"));
+			if(menu_check((char*)ui_text("command.resizable","Resizable"),1,r,'\0')){r^=1,iwrite(def,lmistr("resizable"),lmn(r)),mark_dirty();}
+		}
+		if(uimode==mode_interact||uimode==mode_draw||uimode==mode_object){
+			menu_bar((char*)ui_text("menu.tool","Tool"),ms.type==modal_none&&!kc.on);
+			if(menu_check((char*)ui_text("command.interact","Interact"),1,uimode==mode_interact,0))setuimode(mode_interact);
+			if(menu_check((char*)ui_text("menu.widgets","Widgets")    ,1,uimode==mode_object  ,0))setuimode(mode_object);
+			menu_separator();
+			if(menu_check((char*)ui_text("command.select","Select")          ,1,uimode==mode_draw&&dr.tool==tool_select     ,0))settool(tool_select     );
+			if(menu_check((char*)ui_text("command.lasso","Lasso")            ,1,uimode==mode_draw&&dr.tool==tool_lasso      ,0))settool(tool_lasso      );
+			if(menu_check((char*)ui_text("command.pencil","Pencil")          ,1,uimode==mode_draw&&dr.tool==tool_pencil     ,0))settool(tool_pencil     );
+			if(menu_check((char*)ui_text("command.line","Line")              ,1,uimode==mode_draw&&dr.tool==tool_line       ,0))settool(tool_line       );
+			if(menu_check((char*)ui_text("command.flood","Flood")            ,1,uimode==mode_draw&&dr.tool==tool_fill       ,0))settool(tool_fill       );
+			if(menu_check((char*)ui_text("command.box","Box")                ,1,uimode==mode_draw&&dr.tool==tool_rect       ,0))settool(tool_rect       );
+			if(menu_check((char*)ui_text("command.filled_box","Filled Box")  ,1,uimode==mode_draw&&dr.tool==tool_fillrect   ,0))settool(tool_fillrect   );
+			if(menu_check((char*)ui_text("command.oval","Oval")              ,1,uimode==mode_draw&&dr.tool==tool_ellipse    ,0))settool(tool_ellipse    );
+			if(menu_check((char*)ui_text("command.filled_oval","Filled Oval"),1,uimode==mode_draw&&dr.tool==tool_fillellipse,0))settool(tool_fillellipse);
+			if(menu_check((char*)ui_text("command.polygon","Polygon")        ,1,uimode==mode_draw&&dr.tool==tool_poly       ,0))settool(tool_poly       );
+		}
+		if(uimode==mode_draw||uimode==mode_object){
+			menu_bar((char*)ui_text("menu.view","View"),ms.type==modal_none&&!kc.on);
+			if(menu_check((char*)ui_text("command.show_widgets","Show Widgets")                 ,1,dr.show_widgets,'\0'))dr.show_widgets^=1;
+			if(menu_check((char*)ui_text("command.show_widget_bounds","Show Widget Bounds")     ,1,ob.show_bounds ,'\0'))ob.show_bounds ^=1;
+			if(menu_check((char*)ui_text("command.show_widget_names","Show Widget Names")       ,1,ob.show_names  ,'\0'))ob.show_names  ^=1;
+			if(menu_check((char*)ui_text("command.show_cursor_info","Show Cursor Info")         ,1,ob.show_cursor ,'\0'))ob.show_cursor ^=1;
+			if(menu_check((char*)ui_text("command.show_alignment_guides","Show Alignment Guides"),1,ob.show_guides ,'\0'))ob.show_guides ^=1;
+			if(menu_check((char*)ui_text("command.show_animation","Show Animation")             ,1,dr.show_anim   ,'\0'))dr.show_anim   ^=1;
+			menu_separator();
+			if(menu_check((char*)ui_text("command.show_grid_overlay","Show Grid Overlay"),1,dr.show_grid,0  ))dr.show_grid^=1;
+			if(menu_check((char*)ui_text("command.snap_to_grid","Snap to Grid")          ,1,dr.snap     ,'p'))dr.snap     ^=1;
+			if(menu_item((char*)ui_text("command.grid_and_scale","Grid and Scale...")    ,1,'\0'))modal_enter(modal_grid);
+			menu_separator();
+			if(menu_check((char*)ui_text("command.transparency_mask","Transparency Mask"),1,dr.trans_mask  ,0))dr.trans_mask  ^=1;
+			if(menu_check((char*)ui_text("command.fat_bits","Fat Bits")                  ,1,dr.fatbits     ,0)){
 			if(ms.type==modal_none&&uimode!=mode_draw)setuimode(mode_draw);
 			dr.fatbits^=1;if(dr.fatbits){center_fatbits(box_midpoint(bg_has_sel()||bg_has_lasso()?dr.sel_here:con_dim()));}
 		}
 	}
 	if(uimode==mode_draw){
-		menu_bar("Style",ms.type==modal_none&&!kc.on);
-		if(menu_item("Stroke...",1,'\0'))modal_enter(modal_pattern);
-		if(menu_item("Fill..."  ,1,'\0'))modal_enter(modal_fill);
-		if(menu_item("Brush..." ,1,'\0'))modal_enter(modal_brush);
-		menu_separator();
-		if(menu_check("Color"       ,1,dr.color,0))dr.color^=1;
-		if(menu_check("Transparency",1,dr.trans,0))dr.trans^=1;
-		if(menu_check("Underpaint"  ,1,dr.under,0))dr.under^=1;
+			menu_bar((char*)ui_text("menu.style","Style"),ms.type==modal_none&&!kc.on);
+			if(menu_item((char*)ui_text("command.stroke","Stroke..."),1,'\0'))modal_enter(modal_pattern);
+			if(menu_item((char*)ui_text("command.fill","Fill...")    ,1,'\0'))modal_enter(modal_fill);
+			if(menu_item((char*)ui_text("command.brush","Brush...")  ,1,'\0'))modal_enter(modal_brush);
+			menu_separator();
+			if(menu_check((char*)ui_text("command.color","Color")              ,1,dr.color,0))dr.color^=1;
+			if(menu_check((char*)ui_text("command.transparency","Transparency"),1,dr.trans,0))dr.trans^=1;
+			if(menu_check((char*)ui_text("command.underpaint","Underpaint")    ,1,dr.under,0))dr.under^=1;
 		#ifndef NO_TRACING
-		if(menu_check("Tracing Mode",windowed,tracing,0))set_tracing=!tracing;
+			if(menu_check((char*)ui_text("command.tracing_mode","Tracing Mode"),windowed,tracing,0))set_tracing=!tracing;
 		#endif
 	}
 	if(uimode==mode_object){
-		menu_bar("Widgets",ms.type==modal_none);
-		if(menu_item("New Button",1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("button"));ob_create(l_list(p));}
-		if(menu_item("New Field" ,1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("field" ));ob_create(l_list(p));}
-		if(menu_item("New Slider",1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("slider"));ob_create(l_list(p));}
-		if(menu_item("New Canvas",1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("canvas"));ob_create(l_list(p));}
-		if(menu_item("New Grid"  ,1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("grid"  ));ob_create(l_list(p));}
-		if(card_is(con())&&menu_item("New Contraption...",1,'\0'))modal_enter(modal_pick_contraption);
-		if(menu_item("Order..."   ,ifield(con(),"widgets")->c,'O'))modal_enter(modal_orderwids);
+			menu_bar((char*)ui_text("menu.widgets","Widgets"),ms.type==modal_none);
+			if(menu_item((char*)ui_text("command.new_button","New Button"),1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("button"));ob_create(l_list(p));}
+			if(menu_item((char*)ui_text("command.new_field","New Field")  ,1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("field" ));ob_create(l_list(p));}
+			if(menu_item((char*)ui_text("command.new_slider","New Slider"),1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("slider"));ob_create(l_list(p));}
+			if(menu_item((char*)ui_text("command.new_canvas","New Canvas"),1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("canvas"));ob_create(l_list(p));}
+			if(menu_item((char*)ui_text("command.new_grid","New Grid")    ,1,'\0')){lv*p=lmd();dset(p,lmistr("type"),lmistr("grid"  ));ob_create(l_list(p));}
+			if(card_is(con())&&menu_item((char*)ui_text("command.new_contraption","New Contraption..."),1,'\0'))modal_enter(modal_pick_contraption);
+			if(menu_item((char*)ui_text("command.order","Order...")       ,ifield(con(),"widgets")->c,'O'))modal_enter(modal_orderwids);
 		menu_separator();
 		int al=1,aa=1,av=1,as=1,at=1,ai=1,an=1;EACH(z,ob.sel){
 			widget w=unpack_widget(ob.sel->lv[z]);al&=w.locked;
@@ -4088,21 +4164,21 @@ void all_menus(void){
 			aa&=lb(ifield(ob.sel->lv[z],"animated"));
 			av&=lb(ifield(ob.sel->lv[z],"volatile"));
 		}
-		if(menu_check("Locked"          ,ob.sel->c,ob.sel->c&&al,'\0'))ob_edit_prop("locked"  ,lmn(!al));
-		if(menu_check("Animated"        ,ob.sel->c,ob.sel->c&&aa,'\0'))ob_edit_prop("animated",lmn(!aa));
-		if(menu_check("Volatile"        ,ob.sel->c,ob.sel->c&&av,'\0'))ob_edit_prop("volatile",lmn(!av));
-		menu_separator();
-		if(menu_check("Show Solid"      ,ob.sel->c,ob.sel->c&&as,'\0'))ob_edit_prop("show",lmistr("solid"));
-		if(menu_check("Show Transparent",ob.sel->c,ob.sel->c&&at,'\0'))ob_edit_prop("show",lmistr("transparent"));
-		if(menu_check("Show Inverted"   ,ob.sel->c,ob.sel->c&&ai,'\0'))ob_edit_prop("show",lmistr("invert"));
-		if(menu_check("Show None"       ,ob.sel->c,ob.sel->c&&an,'\0'))ob_edit_prop("show",lmistr("none"));
-		menu_separator();
-		if(menu_item("Font..."      ,ob.sel->c   ,'\0'))modal_enter(modal_fonts);
-		if(menu_item("Pattern..."   ,ob.sel->c   ,'\0')){
+			if(menu_check((char*)ui_text("command.locked","Locked")      ,ob.sel->c,ob.sel->c&&al,'\0'))ob_edit_prop("locked"  ,lmn(!al));
+			if(menu_check((char*)ui_text("command.animated","Animated")  ,ob.sel->c,ob.sel->c&&aa,'\0'))ob_edit_prop("animated",lmn(!aa));
+			if(menu_check((char*)ui_text("command.volatile","Volatile")  ,ob.sel->c,ob.sel->c&&av,'\0'))ob_edit_prop("volatile",lmn(!av));
+			menu_separator();
+			if(menu_check((char*)ui_text("command.show_solid","Show Solid")            ,ob.sel->c,ob.sel->c&&as,'\0'))ob_edit_prop("show",lmistr("solid"));
+			if(menu_check((char*)ui_text("command.show_transparent","Show Transparent"),ob.sel->c,ob.sel->c&&at,'\0'))ob_edit_prop("show",lmistr("transparent"));
+			if(menu_check((char*)ui_text("command.show_inverted","Show Inverted")      ,ob.sel->c,ob.sel->c&&ai,'\0'))ob_edit_prop("show",lmistr("invert"));
+			if(menu_check((char*)ui_text("command.show_none","Show None")              ,ob.sel->c,ob.sel->c&&an,'\0'))ob_edit_prop("show",lmistr("none"));
+			menu_separator();
+			if(menu_item((char*)ui_text("command.font","Font...")       ,ob.sel->c   ,'\0'))modal_enter(modal_fonts);
+			if(menu_item((char*)ui_text("command.pattern","Pattern...") ,ob.sel->c   ,'\0')){
 			ob.pending_pattern=ln(ifield(ob.sel->lv[0],"pattern"));
 			modal_enter(modal_widpattern);
 		}
-		if(menu_item("Script..."    ,ob.sel->c   ,'r')){
+			if(menu_item((char*)ui_text("command.script","Script...")   ,ob.sel->c   ,'r')){
 			int m=1;for(int z=1;z<ob.sel->c;z++)if(!matchr(ifield(ob.sel->lv[0],"script"),ifield(ob.sel->lv[z],"script"))){m=0;break;}
 			if(m){setscript(l_drop(ZERO,ob.sel));}else{
 				modal_enter(modal_multiscript);
@@ -4110,22 +4186,22 @@ void all_menus(void){
 				ms.verb=lmcstr("Edit");
 			}
 		}
-		if(menu_item("Properties...",ob.sel->c==1,'\0')||(ob.sel->c==1&&ev.action&&ms.type==modal_none))object_properties(ob.sel->lv[0]);
-	}
-	if(ms.type==modal_listen){
-		menu_bar("Listener",1);
-		if(menu_item("Clear History",1,'\0')){li.hist->c=0,li.scroll=0;}
-		if(menu_item("Clear Locals" ,1,'\0')){li.vars->c=0;}
-		menu_separator();
-		if(menu_item("Show Locals"  ,1,'\0')){listen_show(align_right,0,li.vars);}
-		menu_separator();
-		if(menu_item("Evaluate"     ,rtext_len(ms.text.table),'\0'))listener_eval();
-	}
-	menu_bar("Help",1);
-	if(menu_item("Decker Website..."  ,1,'\0'))n_go(deck,l_list(lmcstr("http://beyondloom.com/decker/index.html"          )));
-	if(menu_item("Decker Community...",1,'\0'))n_go(deck,l_list(lmcstr("https://internet-janitor.itch.io/decker/community")));
-	if(menu_item("Decker Reference...",1,'\0'))n_go(deck,l_list(lmcstr("http://beyondloom.com/decker/decker.html"         )));
-	if(menu_item("Lil Reference..."   ,1,'\0'))n_go(deck,l_list(lmcstr("http://beyondloom.com/decker/lil.html"            )));
+			if(menu_item((char*)ui_text("command.properties","Properties..."),ob.sel->c==1,'\0')||(ob.sel->c==1&&ev.action&&ms.type==modal_none))object_properties(ob.sel->lv[0]);
+		}
+		if(ms.type==modal_listen){
+			menu_bar((char*)ui_text("menu.listener","Listener"),1);
+			if(menu_item((char*)ui_text("command.clear_history","Clear History"),1,'\0')){li.hist->c=0,li.scroll=0;}
+			if(menu_item((char*)ui_text("command.clear_locals","Clear Locals")  ,1,'\0')){li.vars->c=0;}
+			menu_separator();
+			if(menu_item((char*)ui_text("command.show_locals","Show Locals"),1,'\0')){listen_show(align_right,0,li.vars);}
+			menu_separator();
+			if(menu_item((char*)ui_text("command.evaluate","Evaluate"),rtext_len(ms.text.table),'\0'))listener_eval();
+		}
+		menu_bar((char*)ui_text("menu.help","Help"),1);
+		if(menu_item((char*)ui_text("command.decker_website","Decker Website...")    ,1,'\0'))n_go(deck,l_list(lmcstr("http://beyondloom.com/decker/index.html"          )));
+		if(menu_item((char*)ui_text("command.decker_community","Decker Community..."),1,'\0'))n_go(deck,l_list(lmcstr("https://internet-janitor.itch.io/decker/community")));
+		if(menu_item((char*)ui_text("command.decker_reference","Decker Reference..."),1,'\0'))n_go(deck,l_list(lmcstr("http://beyondloom.com/decker/decker.html"         )));
+		if(menu_item((char*)ui_text("command.lil_reference","Lil Reference...")      ,1,'\0'))n_go(deck,l_list(lmcstr("http://beyondloom.com/decker/lil.html"            )));
 }
 
 void main_view(void){

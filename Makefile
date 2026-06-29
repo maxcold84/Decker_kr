@@ -76,17 +76,23 @@ ifneq ($(V),1)
 	Q:=@
 endif
 
+KO_UI_SOURCES=scripts/build_ko_ui_assets.mjs resources/ko-ui/strings.json fonts/dunggeunmo/DungGeunMo.ttf
+KO_UI_ASSETS=js/ko-ui-strings.js js/ko-ui-font.js c/ko_ui_strings.h c/ko_ui_font.h
+
+$(KO_UI_ASSETS): $(KO_UI_SOURCES)
+	$(Q)node scripts/build_ko_ui_assets.mjs
+
 # include potentially unsafe/nonportable scripting APIs
 # FLAGS:=$(FLAGS) -DDANGER_ZONE
 
 decker: c/build/decker
 lilt: c/build/lilt
 
-c/build/decker: c/resources.h c/decker.c c/dom.h c/lil.h
+c/build/decker: $(KO_UI_ASSETS) c/resources.h c/decker.c c/dom.h c/lil.h
 	@mkdir -p c/build
 	$(Q)$(COMPILER) ./c/decker.c -o ./c/build/decker $(SDL) $(FLAGS) -DVERSION="\"$(VERSION)\""
 
-c/resources.h: examples/decks/tour.deck js/lil.js js/danger.js js/decker.js js/decker.html
+c/resources.h: $(KO_UI_ASSETS) examples/decks/tour.deck js/lil.js js/danger.js js/ko-ui-strings.js js/ko-ui-font.js js/decker.js js/decker.html
 	@chmod +x ./scripts/resources.sh
 	$(Q)./scripts/resources.sh examples/decks/tour.deck
 
@@ -124,7 +130,7 @@ rundecker: decker
 	./c/build/decker
 
 .PHONY: jsres
-js: jsres
+js: jsres $(KO_UI_ASSETS)
 	@mkdir -p js/build/
 	@echo "VERSION=\"${VERSION}\"" > js/build/lilt.js
 	@cat js/lil.js js/repl.js >> js/build/lilt.js
@@ -145,7 +151,7 @@ testawk:
 	@awk -f tools/awk/lila.awk tests/dom/images.lil
 	@awk -f tools/awk/lila.awk tests/puzzles/weeklychallenge.lil
 
-web-decker: js
+web-decker: js $(KO_UI_ASSETS)
 	@chmod +x ./scripts/web_decker.sh
 	@./scripts/web_decker.sh examples/decks/tour.deck js/build/decker.html $(VERSION)
 

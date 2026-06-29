@@ -12,9 +12,16 @@ fi
 
 DST=c/resources.h
 
-printf "%s\n" "// auto-generated from web-decker source!" > $DST
-xxd -i js/lil.js      >> $DST
-xxd -i js/danger.js   >> $DST
-xxd -i js/decker.html >> $DST
-xxd -i js/decker.js   >> $DST
-xxd -i $DECK          >> $DST
+# Keep every xxd call under one redirection. Repeated `>> "$DST"` writes can
+# corrupt this file on Windows/MSYS2 when xxd resolves to Git-for-Windows xxd.
+# See docs/korean-ui-maintenance.md.
+{
+	printf "%s\n" "// auto-generated from web-decker source!"
+	xxd -i js/lil.js
+	xxd -i js/danger.js
+	xxd -i js/ko-ui-strings.js
+	xxd -i js/ko-ui-font.js
+	xxd -i js/decker.html
+	xxd -i js/decker.js
+	xxd -i "$DECK"
+} > "$DST"

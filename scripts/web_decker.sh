@@ -17,6 +17,8 @@ echo -e "VERSION=\"${VERSION}\"\n" >> $DST
 echo -e "DANGEROUS=${DANGER}\n" >> $DST
 cat js/lil.js >> $DST
 cat js/danger.js >> $DST
+cat js/ko-ui-strings.js >> $DST
+cat js/ko-ui-font.js >> $DST
 cat js/decker.js >> $DST
 echo -e "</script></body>" >> $DST
 

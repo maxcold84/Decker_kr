@@ -1,0 +1,1685 @@
+{
+  "schema_version": "1",
+  "entries": [
+    {
+      "id": "menu.decker",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Decker",
+      "ko": "Decker"
+    },
+    {
+      "id": "menu.file",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "File",
+      "ko": "파일"
+    },
+    {
+      "id": "menu.edit",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Edit",
+      "ko": "편집"
+    },
+    {
+      "id": "menu.card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Card",
+      "ko": "카드"
+    },
+    {
+      "id": "menu.prototype",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Prototype",
+      "ko": "프로토타입"
+    },
+    {
+      "id": "menu.tool",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Tool",
+      "ko": "도구"
+    },
+    {
+      "id": "menu.view",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "View",
+      "ko": "보기"
+    },
+    {
+      "id": "menu.style",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Style",
+      "ko": "스타일"
+    },
+    {
+      "id": "menu.widgets",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Widgets",
+      "ko": "위젯"
+    },
+    {
+      "id": "menu.text",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Text",
+      "ko": "텍스트"
+    },
+    {
+      "id": "menu.listener",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Listener",
+      "ko": "리스너"
+    },
+    {
+      "id": "menu.script",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Script",
+      "ko": "스크립트"
+    },
+    {
+      "id": "menu.help",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Help",
+      "ko": "도움말"
+    },
+    {
+      "id": "command.about",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "About...",
+      "ko": "정보..."
+    },
+    {
+      "id": "command.fullscreen",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Fullscreen",
+      "ko": "전체 화면"
+    },
+    {
+      "id": "command.touch_input",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Touch Input",
+      "ko": "터치 입력"
+    },
+    {
+      "id": "command.script_profiler",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Script Profiler",
+      "ko": "스크립트 프로파일러"
+    },
+    {
+      "id": "command.toolbars",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Toolbars",
+      "ko": "도구 막대"
+    },
+    {
+      "id": "command.auto_save",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Auto-Save",
+      "ko": "자동 저장"
+    },
+    {
+      "id": "command.quit",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Quit",
+      "ko": "종료"
+    },
+    {
+      "id": "command.stop",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Stop",
+      "ko": "중지"
+    },
+    {
+      "id": "command.close_script",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Close Script",
+      "ko": "스크립트 닫기"
+    },
+    {
+      "id": "command.go_to_deck",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to Deck",
+      "ko": "덱으로 이동"
+    },
+    {
+      "id": "command.go_to_card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to Card",
+      "ko": "카드로 이동"
+    },
+    {
+      "id": "command.go_to_prototype",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to Prototype",
+      "ko": "프로토타입으로 이동"
+    },
+    {
+      "id": "command.xray_specs",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "X-Ray Specs",
+      "ko": "엑스레이 보기"
+    },
+    {
+      "id": "command.new_deck",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Deck...",
+      "ko": "새 덱..."
+    },
+    {
+      "id": "command.new_card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Card",
+      "ko": "새 카드"
+    },
+    {
+      "id": "command.open",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Open...",
+      "ko": "열기..."
+    },
+    {
+      "id": "command.save",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Save",
+      "ko": "저장"
+    },
+    {
+      "id": "command.save_as",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Save As...",
+      "ko": "다른 이름으로 저장..."
+    },
+    {
+      "id": "command.import_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Import Image...",
+      "ko": "이미지 가져오기..."
+    },
+    {
+      "id": "command.export_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Export Image...",
+      "ko": "이미지 내보내기..."
+    },
+    {
+      "id": "command.import_sound",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Import Sound...",
+      "ko": "소리 가져오기..."
+    },
+    {
+      "id": "command.purge_volatiles",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Purge Volatiles",
+      "ko": "휘발성 항목 정리"
+    },
+    {
+      "id": "command.cards",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Cards...",
+      "ko": "카드..."
+    },
+    {
+      "id": "command.sounds",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Sounds...",
+      "ko": "소리..."
+    },
+    {
+      "id": "command.prototypes",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Prototypes...",
+      "ko": "프로토타입..."
+    },
+    {
+      "id": "command.resources",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Resources...",
+      "ko": "리소스..."
+    },
+    {
+      "id": "command.properties",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Properties...",
+      "ko": "속성..."
+    },
+    {
+      "id": "command.undo",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Undo",
+      "ko": "실행 취소"
+    },
+    {
+      "id": "command.redo",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Redo",
+      "ko": "다시 실행"
+    },
+    {
+      "id": "command.cut",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Cut",
+      "ko": "잘라내기"
+    },
+    {
+      "id": "command.copy",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy",
+      "ko": "복사"
+    },
+    {
+      "id": "command.paste",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste",
+      "ko": "붙여넣기"
+    },
+    {
+      "id": "command.clear",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Clear",
+      "ko": "지우기"
+    },
+    {
+      "id": "command.select_all",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Select All",
+      "ko": "모두 선택"
+    },
+    {
+      "id": "command.copy_rich_text",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy Rich Text",
+      "ko": "서식 있는 텍스트 복사"
+    },
+    {
+      "id": "command.paste_rich_text",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Rich Text",
+      "ko": "서식 있는 텍스트 붙여넣기"
+    },
+    {
+      "id": "command.paste_inline_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Inline Image",
+      "ko": "인라인 이미지 붙여넣기"
+    },
+    {
+      "id": "command.keycaps",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Keycaps...",
+      "ko": "키캡..."
+    },
+    {
+      "id": "command.go_first",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to First",
+      "ko": "첫 카드로 이동"
+    },
+    {
+      "id": "command.go_previous",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to Previous",
+      "ko": "이전 카드로 이동"
+    },
+    {
+      "id": "command.go_next",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to Next",
+      "ko": "다음 카드로 이동"
+    },
+    {
+      "id": "command.go_last",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go to Last",
+      "ko": "마지막 카드로 이동"
+    },
+    {
+      "id": "command.go_back",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Go Back",
+      "ko": "뒤로 이동"
+    },
+    {
+      "id": "command.cut_card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Cut Card",
+      "ko": "카드 잘라내기"
+    },
+    {
+      "id": "command.copy_card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy Card",
+      "ko": "카드 복사"
+    },
+    {
+      "id": "command.script",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Script...",
+      "ko": "스크립트..."
+    },
+    {
+      "id": "command.attributes",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Attributes...",
+      "ko": "속성값..."
+    },
+    {
+      "id": "command.show_margins",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Margins",
+      "ko": "여백 표시"
+    },
+    {
+      "id": "command.resizable",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Resizable",
+      "ko": "크기 조절 가능"
+    },
+    {
+      "id": "command.interact",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Interact",
+      "ko": "상호작용"
+    },
+    {
+      "id": "command.select",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Select",
+      "ko": "선택"
+    },
+    {
+      "id": "command.lasso",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Lasso",
+      "ko": "올가미"
+    },
+    {
+      "id": "command.pencil",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Pencil",
+      "ko": "연필"
+    },
+    {
+      "id": "command.line",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Line",
+      "ko": "선"
+    },
+    {
+      "id": "command.flood",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Flood",
+      "ko": "채우기"
+    },
+    {
+      "id": "command.box",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Box",
+      "ko": "상자"
+    },
+    {
+      "id": "command.filled_box",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Filled Box",
+      "ko": "채운 상자"
+    },
+    {
+      "id": "command.oval",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Oval",
+      "ko": "타원"
+    },
+    {
+      "id": "command.filled_oval",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Filled Oval",
+      "ko": "채운 타원"
+    },
+    {
+      "id": "command.polygon",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Polygon",
+      "ko": "다각형"
+    },
+    {
+      "id": "command.show_widgets",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Widgets",
+      "ko": "위젯 표시"
+    },
+    {
+      "id": "command.show_widget_bounds",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Widget Bounds",
+      "ko": "위젯 경계 표시"
+    },
+    {
+      "id": "command.show_widget_names",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Widget Names",
+      "ko": "위젯 이름 표시"
+    },
+    {
+      "id": "command.show_cursor_info",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Cursor Info",
+      "ko": "커서 정보 표시"
+    },
+    {
+      "id": "command.show_alignment_guides",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Alignment Guides",
+      "ko": "정렬 안내선 표시"
+    },
+    {
+      "id": "command.show_animation",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Animation",
+      "ko": "애니메이션 표시"
+    },
+    {
+      "id": "command.show_grid_overlay",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Grid Overlay",
+      "ko": "그리드 오버레이 표시"
+    },
+    {
+      "id": "command.snap_to_grid",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Snap to Grid",
+      "ko": "그리드에 맞춤"
+    },
+    {
+      "id": "command.grid_and_scale",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Grid and Scale...",
+      "ko": "그리드와 배율..."
+    },
+    {
+      "id": "command.transparency_mask",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Transparency Mask",
+      "ko": "투명도 마스크"
+    },
+    {
+      "id": "command.fat_bits",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Fat Bits",
+      "ko": "확대 픽셀"
+    },
+    {
+      "id": "command.stroke",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Stroke...",
+      "ko": "선..."
+    },
+    {
+      "id": "command.fill",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Fill...",
+      "ko": "채우기..."
+    },
+    {
+      "id": "command.brush",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Brush...",
+      "ko": "브러시..."
+    },
+    {
+      "id": "command.color",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Color",
+      "ko": "색상"
+    },
+    {
+      "id": "command.transparency",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Transparency",
+      "ko": "투명도"
+    },
+    {
+      "id": "command.underpaint",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Underpaint",
+      "ko": "밑칠"
+    },
+    {
+      "id": "command.tracing_mode",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Tracing Mode",
+      "ko": "트레이싱 모드"
+    },
+    {
+      "id": "command.new_button",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Button",
+      "ko": "새 버튼"
+    },
+    {
+      "id": "command.new_field",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Field",
+      "ko": "새 필드"
+    },
+    {
+      "id": "command.new_slider",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Slider",
+      "ko": "새 슬라이더"
+    },
+    {
+      "id": "command.new_canvas",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Canvas",
+      "ko": "새 캔버스"
+    },
+    {
+      "id": "command.new_grid",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Grid",
+      "ko": "새 그리드"
+    },
+    {
+      "id": "command.new_contraption",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "New Contraption...",
+      "ko": "새 컨트랩션..."
+    },
+    {
+      "id": "command.order",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Order...",
+      "ko": "순서..."
+    },
+    {
+      "id": "command.locked",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Locked",
+      "ko": "잠김"
+    },
+    {
+      "id": "command.animated",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Animated",
+      "ko": "애니메이션"
+    },
+    {
+      "id": "command.volatile",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Volatile",
+      "ko": "휘발성"
+    },
+    {
+      "id": "command.font",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Font...",
+      "ko": "글꼴..."
+    },
+    {
+      "id": "command.pattern",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Pattern...",
+      "ko": "패턴..."
+    },
+    {
+      "id": "command.copy_table",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy Table",
+      "ko": "표 복사"
+    },
+    {
+      "id": "command.paste_table",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Table",
+      "ko": "표 붙여넣기"
+    },
+    {
+      "id": "command.delete_row",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Delete Row",
+      "ko": "행 삭제"
+    },
+    {
+      "id": "command.add_row",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Add Row",
+      "ko": "행 추가"
+    },
+    {
+      "id": "command.query",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Query...",
+      "ko": "쿼리..."
+    },
+    {
+      "id": "command.cut_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Cut Image",
+      "ko": "이미지 잘라내기"
+    },
+    {
+      "id": "command.copy_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy Image",
+      "ko": "이미지 복사"
+    },
+    {
+      "id": "command.tight_selection",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Tight Selection",
+      "ko": "선택 영역 맞춤"
+    },
+    {
+      "id": "command.add_outline",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Add Outline",
+      "ko": "외곽선 추가"
+    },
+    {
+      "id": "command.resize_to_original",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Resize to Original",
+      "ko": "원본 크기로 조정"
+    },
+    {
+      "id": "command.resize_to_card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Resize to Card",
+      "ko": "카드 크기로 조정"
+    },
+    {
+      "id": "command.resize_to_prototype",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Resize to Prototype",
+      "ko": "프로토타입 크기로 조정"
+    },
+    {
+      "id": "command.invert",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Invert",
+      "ko": "반전"
+    },
+    {
+      "id": "command.flip_horizontal",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Flip Horizontal",
+      "ko": "가로 뒤집기"
+    },
+    {
+      "id": "command.flip_vertical",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Flip Vertical",
+      "ko": "세로 뒤집기"
+    },
+    {
+      "id": "command.rotate_left",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Rotate Left",
+      "ko": "왼쪽으로 회전"
+    },
+    {
+      "id": "command.rotate_right",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Rotate Right",
+      "ko": "오른쪽으로 회전"
+    },
+    {
+      "id": "command.lighten_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Lighten Image",
+      "ko": "이미지 밝게"
+    },
+    {
+      "id": "command.darken_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Darken Image",
+      "ko": "이미지 어둡게"
+    },
+    {
+      "id": "command.cut_widgets",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Cut Widgets",
+      "ko": "위젯 잘라내기"
+    },
+    {
+      "id": "command.copy_widgets",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy Widgets",
+      "ko": "위젯 복사"
+    },
+    {
+      "id": "command.paste_as_new_canvas",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste as new Canvas",
+      "ko": "새 캔버스로 붙여넣기"
+    },
+    {
+      "id": "command.paste_into_canvas",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste into Canvas",
+      "ko": "캔버스에 붙여넣기"
+    },
+    {
+      "id": "command.move_to_front",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Move to Front",
+      "ko": "맨 앞으로 이동"
+    },
+    {
+      "id": "command.move_up",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Move Up",
+      "ko": "앞으로 이동"
+    },
+    {
+      "id": "command.move_down",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Move Down",
+      "ko": "뒤로 이동"
+    },
+    {
+      "id": "command.move_to_back",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Move to Back",
+      "ko": "맨 뒤로 이동"
+    },
+    {
+      "id": "command.heading",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Heading",
+      "ko": "제목"
+    },
+    {
+      "id": "command.body",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Body",
+      "ko": "본문"
+    },
+    {
+      "id": "command.fixed_width",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Fixed Width",
+      "ko": "고정폭"
+    },
+    {
+      "id": "command.link",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Link...",
+      "ko": "링크..."
+    },
+    {
+      "id": "command.indent",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Indent",
+      "ko": "들여쓰기"
+    },
+    {
+      "id": "command.unindent",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Unindent",
+      "ko": "내어쓰기"
+    },
+    {
+      "id": "command.toggle_comment",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Toggle Comment",
+      "ko": "주석 전환"
+    },
+    {
+      "id": "command.cut_sound",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Cut Sound",
+      "ko": "소리 잘라내기"
+    },
+    {
+      "id": "command.copy_sound",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Copy Sound",
+      "ko": "소리 복사"
+    },
+    {
+      "id": "command.paste_sound",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Sound",
+      "ko": "소리 붙여넣기"
+    },
+    {
+      "id": "command.paste_image",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Image",
+      "ko": "이미지 붙여넣기"
+    },
+    {
+      "id": "command.paste_widgets",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Widgets",
+      "ko": "위젯 붙여넣기"
+    },
+    {
+      "id": "command.paste_card",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Paste Card",
+      "ko": "카드 붙여넣기"
+    },
+    {
+      "id": "command.show_solid",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Solid",
+      "ko": "불투명 표시"
+    },
+    {
+      "id": "command.show_transparent",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Transparent",
+      "ko": "투명 표시"
+    },
+    {
+      "id": "command.show_inverted",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Inverted",
+      "ko": "반전 표시"
+    },
+    {
+      "id": "command.show_none",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show None",
+      "ko": "표시 안 함"
+    },
+    {
+      "id": "command.clear_history",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Clear History",
+      "ko": "기록 지우기"
+    },
+    {
+      "id": "command.clear_locals",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Clear Locals",
+      "ko": "지역 변수 지우기"
+    },
+    {
+      "id": "command.show_locals",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Show Locals",
+      "ko": "지역 변수 표시"
+    },
+    {
+      "id": "command.evaluate",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Evaluate",
+      "ko": "평가"
+    },
+    {
+      "id": "command.decker_website",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Decker Website...",
+      "ko": "Decker 웹사이트..."
+    },
+    {
+      "id": "command.decker_community",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Decker Community...",
+      "ko": "Decker 커뮤니티..."
+    },
+    {
+      "id": "command.decker_reference",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Decker Reference...",
+      "ko": "Decker 참조..."
+    },
+    {
+      "id": "command.lil_reference",
+      "kind": "fixed-ui-label",
+      "owner": "app-chrome",
+      "source": "Lil Reference...",
+      "ko": "Lil 참조..."
+    },
+    {
+      "id": "dialog.common.ok",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "OK",
+      "ko": "확인"
+    },
+    {
+      "id": "dialog.common.cancel",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Cancel",
+      "ko": "취소"
+    },
+    {
+      "id": "dialog.common.open",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Open",
+      "ko": "열기"
+    },
+    {
+      "id": "dialog.common.save",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Save",
+      "ko": "저장"
+    },
+    {
+      "id": "dialog.common.close",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Close",
+      "ko": "닫기"
+    },
+    {
+      "id": "dialog.common.new",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "New",
+      "ko": "새로 만들기"
+    },
+    {
+      "id": "dialog.common.edit",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Edit...",
+      "ko": "편집..."
+    },
+    {
+      "id": "dialog.common.delete",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Delete",
+      "ko": "삭제"
+    },
+    {
+      "id": "dialog.common.choose",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Choose...",
+      "ko": "선택..."
+    },
+    {
+      "id": "dialog.common.home",
+      "kind": "fixed-ui-label",
+      "owner": "file-dialog",
+      "source": "Home",
+      "ko": "홈"
+    },
+    {
+      "id": "dialog.common.parent",
+      "kind": "fixed-ui-label",
+      "owner": "file-dialog",
+      "source": "Parent",
+      "ko": "상위"
+    },
+    {
+      "id": "dialog.common.filename",
+      "kind": "fixed-ui-label",
+      "owner": "file-dialog",
+      "source": "Filename",
+      "ko": "파일 이름"
+    },
+    {
+      "id": "dialog.cards.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Cards",
+      "ko": "카드"
+    },
+    {
+      "id": "dialog.sounds.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Sounds",
+      "ko": "소리"
+    },
+    {
+      "id": "dialog.fonts.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Fonts",
+      "ko": "글꼴"
+    },
+    {
+      "id": "dialog.deck_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Deck Properties",
+      "ko": "덱 속성"
+    },
+    {
+      "id": "dialog.card_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Card Properties",
+      "ko": "카드 속성"
+    },
+    {
+      "id": "dialog.button_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Button Properties",
+      "ko": "버튼 속성"
+    },
+    {
+      "id": "dialog.field_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Field Properties",
+      "ko": "필드 속성"
+    },
+    {
+      "id": "dialog.slider_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Slider Properties",
+      "ko": "슬라이더 속성"
+    },
+    {
+      "id": "dialog.canvas_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Canvas Properties",
+      "ko": "캔버스 속성"
+    },
+    {
+      "id": "dialog.grid_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Grid Properties",
+      "ko": "그리드 속성"
+    },
+    {
+      "id": "dialog.prototype_props.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Prototype Properties",
+      "ko": "프로토타입 속성"
+    },
+    {
+      "id": "dialog.widget_order.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Widget Order",
+      "ko": "위젯 순서"
+    },
+    {
+      "id": "dialog.resources.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Font/Deck Accessory Mover",
+      "ko": "글꼴/덱 액세서리 이동"
+    },
+    {
+      "id": "dialog.query.run",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Run",
+      "ko": "실행"
+    },
+    {
+      "id": "dialog.query.apply",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Apply",
+      "ko": "적용"
+    },
+    {
+      "id": "dialog.save_file.title",
+      "kind": "fixed-ui-label",
+      "owner": "file-dialog",
+      "source": "Save File",
+      "ko": "파일 저장"
+    },
+    {
+      "id": "dialog.grid_size.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Grid Size",
+      "ko": "그리드 크기"
+    },
+    {
+      "id": "dialog.action.title",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Button Action",
+      "ko": "버튼 동작"
+    },
+    {
+      "id": "dialog.pick_card.prompt",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Pick a card- any card.",
+      "ko": "카드를 선택하세요."
+    },
+    {
+      "id": "dialog.url.prompt",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Do you wish to open this URL?",
+      "ko": "이 URL을 여시겠습니까?"
+    },
+    {
+      "id": "dialog.link.prompt",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Enter a link string for\nthe selected text span:",
+      "ko": "선택한 텍스트 범위의\n링크 문자열을 입력하세요:"
+    },
+    {
+      "id": "dialog.file.open_click",
+      "kind": "fixed-ui-label",
+      "owner": "file-dialog",
+      "source": "Click to open a file:",
+      "ko": "파일을 열려면 클릭하세요:"
+    },
+    {
+      "id": "dialog.file.fullscreen_click",
+      "kind": "fixed-ui-label",
+      "owner": "modal",
+      "source": "Click to enter fullscreen mode:",
+      "ko": "전체 화면 모드로 전환하려면 클릭하세요:"
+    },
+    {
+      "id": "native.file_dialog.open_wav",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Open a .wav sound file.",
+      "ko": ".wav 소리 파일을 엽니다."
+    },
+    {
+      "id": "native.file_dialog.open_image",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Open an image file.",
+      "ko": "이미지 파일을 엽니다."
+    },
+    {
+      "id": "native.file_dialog.export_gif",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Save a .gif image file.",
+      "ko": ".gif 이미지 파일을 저장합니다."
+    },
+    {
+      "id": "native.file_dialog.open_decker",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Open any .html or .deck.",
+      "ko": ".html 또는 .deck 파일을 엽니다."
+    },
+    {
+      "id": "native.file_dialog.save_decker",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Save a .deck or .html file.",
+      "ko": ".deck 또는 .html 파일을 저장합니다."
+    },
+    {
+      "id": "native.file_dialog.save_locked",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Save locked deck.",
+      "ko": "잠긴 덱을 저장합니다."
+    },
+    {
+      "id": "native.file_dialog.open_any",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Open any file.",
+      "ko": "모든 파일을 엽니다."
+    },
+    {
+      "id": "native.file_dialog.save_text",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "Save a text file.",
+      "ko": "텍스트 파일을 저장합니다."
+    },
+    {
+      "id": "web.file_dialog.deck_accept",
+      "kind": "internal-token",
+      "owner": "file-dialog",
+      "source": ".html,.deck",
+      "preserve": true
+    },
+    {
+      "id": "web.file_dialog.image_accept",
+      "kind": "internal-token",
+      "owner": "file-dialog",
+      "source": "image/*",
+      "preserve": true
+    },
+    {
+      "id": "web.file_dialog.audio_accept",
+      "kind": "internal-token",
+      "owner": "file-dialog",
+      "source": "audio/*",
+      "preserve": true
+    },
+    {
+      "id": "format.card_count",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "Card %d of %d",
+      "ko": "%2$d장 중 %1$d번째 카드"
+    },
+    {
+      "id": "format.widget_count",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "%d widget%s",
+      "ko": "위젯 %d개"
+    },
+    {
+      "id": "format.table_shape",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "%d column%s, %d row%s.",
+      "ko": "열 %d개, 행 %d개."
+    },
+    {
+      "id": "format.decker_version",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "Decker v%s",
+      "ko": "Decker v%s"
+    },
+    {
+      "id": "format.build_stamp",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "built on %s, %s",
+      "ko": "%s, %s 빌드"
+    },
+    {
+      "id": "format.replace_existing",
+      "kind": "fixed-ui-format",
+      "owner": "file-dialog",
+      "source": "The %s \"%s\" already exists. Replace it?",
+      "ko": "%s \"%s\"이(가) 이미 있습니다. 바꾸시겠습니까?"
+    },
+    {
+      "id": "format.unsaved_discard",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "The current deck has unsaved changes.\nAre you sure you want to discard it?",
+      "ko": "현재 덱에 저장되지 않은 변경 사항이 있습니다.\n버리시겠습니까?"
+    },
+    {
+      "id": "format.unsaved_quit",
+      "kind": "fixed-ui-format",
+      "owner": "modal",
+      "source": "The current deck has unsaved changes.\nAre you sure you want to quit?",
+      "ko": "현재 덱에 저장되지 않은 변경 사항이 있습니다.\n종료하시겠습니까?"
+    },
+    {
+      "id": "diagnostic.filename_invalid_chars",
+      "kind": "diagnostic",
+      "owner": "file-dialog",
+      "source": "Filenames may not include:\n\\/:*?\"<>|#%$",
+      "ko": "파일 이름에는 다음 문자를 사용할 수 없습니다:\n\\/:*?\"<>|#%$"
+    },
+    {
+      "id": "diagnostic.no_data",
+      "kind": "diagnostic",
+      "owner": "grid-widget",
+      "source": "(no data)",
+      "ko": "(데이터 없음)"
+    },
+    {
+      "id": "diagnostic.working",
+      "kind": "diagnostic",
+      "owner": "modal",
+      "source": "Working...",
+      "ko": "작업 중..."
+    },
+    {
+      "id": "diagnostic.executing_query",
+      "kind": "diagnostic",
+      "owner": "modal",
+      "source": "Executing Query.",
+      "ko": "쿼리를 실행 중입니다."
+    },
+    {
+      "id": "token.card",
+      "kind": "internal-token",
+      "owner": "lil-runtime",
+      "source": "card",
+      "preserve": true
+    },
+    {
+      "id": "token.deck",
+      "kind": "internal-token",
+      "owner": "lil-runtime",
+      "source": "deck",
+      "preserve": true
+    },
+    {
+      "id": "token.first",
+      "kind": "internal-token",
+      "owner": "navigation",
+      "source": "First",
+      "preserve": true
+    },
+    {
+      "id": "token.prev",
+      "kind": "internal-token",
+      "owner": "navigation",
+      "source": "Prev",
+      "preserve": true
+    },
+    {
+      "id": "token.next",
+      "kind": "internal-token",
+      "owner": "navigation",
+      "source": "Next",
+      "preserve": true
+    },
+    {
+      "id": "token.last",
+      "kind": "internal-token",
+      "owner": "navigation",
+      "source": "Last",
+      "preserve": true
+    },
+    {
+      "id": "token.back",
+      "kind": "internal-token",
+      "owner": "navigation",
+      "source": "Back",
+      "preserve": true
+    },
+    {
+      "id": "token.go",
+      "kind": "internal-token",
+      "owner": "lil-runtime",
+      "source": "go[]",
+      "preserve": true
+    },
+    {
+      "id": "token.play",
+      "kind": "internal-token",
+      "owner": "lil-runtime",
+      "source": "play[]",
+      "preserve": true
+    },
+    {
+      "id": "token.button",
+      "kind": "internal-token",
+      "owner": "dom-model",
+      "source": "button",
+      "preserve": true
+    },
+    {
+      "id": "token.field",
+      "kind": "internal-token",
+      "owner": "dom-model",
+      "source": "field",
+      "preserve": true
+    },
+    {
+      "id": "token.grid",
+      "kind": "internal-token",
+      "owner": "dom-model",
+      "source": "grid",
+      "preserve": true
+    },
+    {
+      "id": "token.canvas",
+      "kind": "internal-token",
+      "owner": "dom-model",
+      "source": "canvas",
+      "preserve": true
+    },
+    {
+      "id": "token.menu",
+      "kind": "internal-token",
+      "owner": "font-model",
+      "source": "menu",
+      "preserve": true
+    },
+    {
+      "id": "token.body",
+      "kind": "internal-token",
+      "owner": "font-model",
+      "source": "body",
+      "preserve": true
+    },
+    {
+      "id": "token.mono",
+      "kind": "internal-token",
+      "owner": "font-model",
+      "source": "mono",
+      "preserve": true
+    },
+    {
+      "id": "token.select",
+      "kind": "internal-token",
+      "owner": "drawing-tool",
+      "source": "select",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.deck_name",
+      "kind": "dynamic-user-content",
+      "owner": "deck-data",
+      "source": "deck.name",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.card_name",
+      "kind": "dynamic-user-content",
+      "owner": "deck-data",
+      "source": "card.name",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.prototype_name",
+      "kind": "dynamic-user-content",
+      "owner": "deck-data",
+      "source": "prototype.name",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.widget_name",
+      "kind": "dynamic-user-content",
+      "owner": "deck-data",
+      "source": "widget.name",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.sound_name",
+      "kind": "dynamic-user-content",
+      "owner": "deck-data",
+      "source": "sound.name",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.file_name",
+      "kind": "dynamic-user-content",
+      "owner": "file-dialog",
+      "source": "selected filename",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.url",
+      "kind": "dynamic-user-content",
+      "owner": "modal",
+      "source": "URL entered by deck script",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.script_prompt",
+      "kind": "dynamic-user-content",
+      "owner": "lil-runtime",
+      "source": "script prompt text",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.query_error",
+      "kind": "dynamic-user-content",
+      "owner": "lil-runtime",
+      "source": "parser/runtime error text",
+      "preserve": true
+    },
+    {
+      "id": "dynamic.user_text",
+      "kind": "dynamic-user-content",
+      "owner": "deck-data",
+      "source": "field text and rich text content",
+      "preserve": true
+    }
+  ]
+}

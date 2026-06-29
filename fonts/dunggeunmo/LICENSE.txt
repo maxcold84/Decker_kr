@@ -1,0 +1,7 @@
+DungGeunMo
+
+The vendored DungGeunMo font files are recorded by the inspected font
+metadata as Public Domain.
+
+Source page cited for provenance:
+https://cactus.tistory.com/193

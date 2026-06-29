@@ -4,6 +4,8 @@ Decker is a multimedia platform for creating and sharing interactive documents, 
 
 ![Decker, complete with toolbars](images/wings.gif)
 
+한국어 버전 문서는 [Readme.ko.md](Readme.ko.md)에서 확인할 수 있습니다.
+
 You can learn more about Decker on [my website](http://beyondloom.com/decker/), on the [community forum](https://internet-janitor.itch.io/decker/community), or you can just dive in and [try it online](http://beyondloom.com/decker/tour.html). Periodic binary releases of Decker for MacOS and Windows are available on [Itch.io](https://internet-janitor.itch.io/decker).
 
 If you're interested in _Lil_, Decker's scripting language, you can access documentation and play with it in your browser at [trylil](http://beyondloom.com/tools/trylil.html).

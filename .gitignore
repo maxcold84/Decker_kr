@@ -1,4 +1,7 @@
 *.DS_Store
+.codegraph/
+.omo/
+Readme.ko.md
 c/build/
 c/resources.h
 js/build/
